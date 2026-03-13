@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>TIA Portal Text List Editor</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'IBM Plex Sans',sans-serif;background:#f8fafc;color:#1e293b;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#0f172a;color:#fff;gap:16px}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-title{font-weight:700;font-size:15px}
+.badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px}
+.badge-changes{background:#f59e0b;color:#0f172a}
+.badge-file{background:#334155;color:#94a3b8}
+.lang-buttons{display:flex;gap:6px}
+.lang-btn{padding:4px 10px;border-radius:6px;border:none;cursor:pointer;font-size:11px;font-weight:600;color:#fff;transition:.15s}
+.lang-btn.off{background:#334155;opacity:.55}
+.topbar-actions{display:flex;gap:8px}
+.btn{padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;border:none;display:inline-flex;align-items:center;gap:6px;transition:.15s}
+.btn-load{background:#334155;color:#e2e8f0}
+.btn-load:hover{background:#475569}
+.btn-export{background:#16a34a;color:#fff}
+.btn-export:hover{background:#15803d}
+.btn-lists{background:#1d4ed8;color:#fff}
+.btn-lists:hover{background:#1e40af}
+.btn-compare{background:#7c3aed;color:#fff}
+.btn-compare:hover{background:#6d28d9}
+
+.main{flex:1;display:flex;overflow:hidden}
+.sidebar{width:270px;background:#fff;border-right:1px solid #e2e8f0;display:flex;flex-direction:column;overflow:hidden;transition:width .2s}
+.sidebar.collapsed{width:44px}
+.sidebar-header{padding:12px 16px 8px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f1f5f9}
+.sidebar-toggle{border:none;background:none;cursor:pointer;font-size:16px;color:#94a3b8}
+#sidebarBody{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.sidebar-search{padding:8px 12px}
+.sidebar-search input{width:100%;padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;outline:none;background:#f8fafc}
+.sidebar-search input:focus{border-color:#93c5fd}
+.sidebar-list{flex:1;overflow:auto;padding:0 8px 8px}
+.group-item{padding:8px 10px;border-radius:6px;cursor:pointer;margin-bottom:2px;border:1px solid transparent}
+.group-item:hover{background:#f8fafc}
+.group-item.active{background:#eff6ff;border-color:#bfdbfe}
+.group-item-name{font-size:12px;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.group-item.active .group-item-name{font-weight:600;color:#1d4ed8}
+.group-item-meta{font-size:10px;color:#94a3b8;margin-top:2px}
+.group-item-multi{display:inline-block;background:#dbeafe;color:#2563eb;font-size:9px;font-weight:600;padding:1px 5px;border-radius:4px;margin-left:4px}
+
+.content{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.content-header{padding:16px 20px 8px;border-bottom:1px solid #e2e8f0}
+.content-header h2{font-size:18px;font-weight:700;color:#0f172a}
+.content-header .info{font-size:12px;color:#64748b;background:#f1f5f9;padding:2px 8px;border-radius:10px}
+.content-search{width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;background:#f8fafc;margin-top:8px}
+.content-search:focus{border-color:#93c5fd}
+.content-table-wrap{flex:1;overflow:auto}
+
+table{width:100%;border-collapse:collapse}
+thead{position:sticky;top:0;z-index:10}
+th{padding:8px 6px;font-size:11px;font-weight:600;text-align:left;border-bottom:2px solid #e2e8f0;text-transform:uppercase;letter-spacing:.05em;color:#64748b;white-space:nowrap}
+th.val-col{width:75px;position:sticky;left:0;z-index:11}
+th.sep{border-left:2px solid #cbd5e1}
+td{padding:2px 4px;border-bottom:1px solid #f1f5f9;font-size:12px}
+td.val-col{font-weight:600;color:#475569;position:sticky;left:0;z-index:5;border-right:1px solid #e2e8f0}
+td.sep{border-left:2px solid #cbd5e1}
+tr:nth-child(even) td{background:#fff}
+tr:nth-child(odd) td{background:#fafbfc}
+thead tr th{background:#f8fafc}
+thead tr.sub th{background:#f1f5f9;font-size:10px}
+
+.cell{padding:3px 6px;cursor:text;min-height:22px;font-size:12px;font-family:'JetBrains Mono',monospace;border-radius:4px;border:1px solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cell:hover{border-color:#cbd5e1}
+.cell.empty{color:#94a3b8}
+.cell.modified{background:#fef3c7}
+.cell.selected{background:#dbeafe!important;border-color:#60a5fa}
+.cell.anchor{outline:2px solid #2563eb;outline-offset:-2px}
+.cell-input{width:100%;border-radius:4px;padding:3px 6px;font-size:12px;font-family:'JetBrains Mono',monospace;outline:none;background:#fff}
+
+.empty-state{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:#94a3b8}
+.empty-state .icon{font-size:48px;opacity:.3}
+
+.upload-zone,.selector-zone{background:#fff;border-radius:16px;padding:36px 42px;text-align:center;box-shadow:0 25px 50px rgba(0,0,0,.08);width:min(960px,92vw)}
+.upload-zone h1,.selector-zone h1{font-size:24px;font-weight:700;color:#0f172a;margin-bottom:8px}
+.upload-zone p,.selector-zone p{color:#64748b;font-size:14px;margin-bottom:22px;line-height:1.6}
+.upload-btn{display:inline-flex;align-items:center;gap:10px;padding:12px 28px;background:#2563eb;color:#fff;border-radius:10px;cursor:pointer;font-size:15px;font-weight:600;transition:.2s;box-shadow:0 4px 12px rgba(37,99,235,.35);border:none}
+.upload-btn:hover{background:#1d4ed8}
+.upload-zone.dragover{border:3px dashed #2563eb;background:#eff6ff}
+
+.selector-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.selector-actions .left,.selector-actions .right{display:flex;gap:8px;align-items:center}
+.pill-btn{border:1px solid #cbd5e1;background:#fff;color:#334155;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer}
+.pill-btn:hover{background:#f8fafc}
+.selector-search{padding:8px 10px;border:1px solid #dbe3ef;border-radius:8px;font-size:13px;min-width:220px}
+.selection-list{max-height:380px;overflow:auto;border:1px solid #e2e8f0;border-radius:10px;text-align:left;background:#f8fafc;padding:10px}
+.sel-item{display:flex;justify-content:space-between;gap:10px;align-items:center;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;margin-bottom:8px}
+.sel-item label{display:flex;align-items:center;gap:10px;cursor:pointer;flex:1}
+.sel-meta{font-size:11px;color:#64748b}
+.selector-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:14px}
+.primary-btn{background:#2563eb;color:#fff;border:none;border-radius:9px;padding:10px 16px;font-weight:600;cursor:pointer}
+.primary-btn:hover{background:#1d4ed8}
+
+.compare-layout{flex:1;display:flex;overflow:hidden;background:#f8fafc}
+.compare-panel{width:290px;border-right:1px solid #e2e8f0;background:#fff;display:flex;flex-direction:column}
+.compare-panel .selector-search{margin:10px}
+.compare-list{flex:1;overflow:auto;padding:0 10px 10px}
+.compare-actions{padding:10px;border-bottom:1px solid #f1f5f9;display:flex;gap:8px;flex-wrap:wrap}
+.compare-table-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.compare-hint{padding:10px 14px;font-size:12px;color:#64748b;background:#fff;border-bottom:1px solid #e2e8f0}
+
+.toast{position:fixed;bottom:20px;right:20px;background:#16a34a;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:1000;transition:opacity .3s,transform .3s}
+.toast.hidden{opacity:0;transform:translateY(10px);pointer-events:none}
+.loading-overlay{position:fixed;inset:0;background:rgba(15,23,42,.7);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:16px;color:#fff;font-size:16px;font-weight:600}
+.spinner{width:40px;height:40px;border:4px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="loading-overlay" id="loadingOverlay" style="display:none"><div class="spinner"></div><div id="loadingText">Caricamento in corso...</div></div>
+
+<div id="uploadScreen" style="height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%)">
+  <div class="upload-zone" id="dropZone">
+    <div style="font-size:40px;margin-bottom:16px">⚙️</div>
+    <h1>TIA Portal Text List Editor</h1>
+    <p>Carica il file Excel esportato dal TIA Portal.<br>Dopo il caricamento puoi scegliere quali elenchi aprire e come visualizzarli.</p>
+    <label class="upload-btn">📂 Carica Export.xlsx<input type="file" accept=".xlsx,.xls" id="fileInput" style="display:none"></label>
+  </div>
+</div>
+
+<div id="selectionScreen" style="display:none;height:100vh;align-items:center;justify-content:center;background:linear-gradient(135deg,#e2e8f0 0%,#f8fafc 100%)">
+  <div class="selector-zone">
+    <h1>Seleziona gli elenchi da caricare</h1>
+    <p>Questa selezione definisce l'insieme su cui lavorare.</p>
+    <div class="selector-actions">
+      <div class="left">
+        <button class="pill-btn" onclick="selectAllLists(true)">Seleziona tutto</button>
+        <button class="pill-btn" onclick="selectAllLists(false)">Deseleziona tutto</button>
+      </div>
+      <div class="right"><input class="selector-search" id="selectionSearch" placeholder="Filtra elenchi..." oninput="renderSelectionList()"></div>
+    </div>
+    <div class="selection-list" id="selectionList"></div>
+    <div class="selector-footer">
+      <div id="selectionInfo" class="sel-meta"></div>
+      <button class="primary-btn" onclick="startEditingSelected()">Apri editor gruppi</button>
+    </div>
+  </div>
+</div>
+
+<div id="compareScreen" style="display:none;height:100vh;flex-direction:column">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span style="font-size:20px">📊</span><span class="topbar-title">Vista elenchi testi insieme</span>
+      <span class="badge badge-file" id="compareFileLabel"></span>
+      <span class="badge badge-changes" id="compareChangesBadge" style="display:none"></span>
+    </div>
+    <div class="lang-buttons" id="compareLangButtons"></div>
+    <div class="topbar-actions">
+      <button class="btn btn-lists" onclick="showSelectionScreen()">📑 Cambia insieme</button>
+      <button class="btn btn-load" onclick="showEditor()">🧭 Editor gruppi</button>
+      <button class="btn btn-export" onclick="doExport()">💾 Scarica Export_modified.xlsx</button>
+    </div>
+  </div>
+  <div class="compare-layout">
+    <div class="compare-panel">
+      <div class="compare-actions">
+        <button class="pill-btn" onclick="selectAllCompareLists(true)">Seleziona tutti</button>
+        <button class="pill-btn" onclick="selectAllCompareLists(false)">Deseleziona tutti</button>
+      </div>
+      <input class="selector-search" id="compareSearch" placeholder="Filtra elenchi..." oninput="renderCompareList()">
+      <div class="compare-list" id="compareList"></div>
+    </div>
+    <div class="compare-table-wrap">
+      <div class="compare-hint" id="compareInfo"></div>
+      <div class="content-table-wrap" id="compareTableWrap"></div>
+    </div>
+  </div>
+</div>
+
+<div id="editorScreen" style="display:none;height:100vh;flex-direction:column">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span style="font-size:20px">⚙️</span>
+      <span class="topbar-title">TIA Text Editor</span>
+      <span class="badge badge-file" id="fileLabel"></span>
+      <span class="badge badge-changes" id="changesBadge" style="display:none"></span>
+    </div>
+    <div class="lang-buttons" id="langButtons"></div>
+    <div class="topbar-actions">
+      <button class="btn btn-compare" onclick="showCompareScreen()">📊 Vista insieme</button>
+      <button class="btn btn-lists" onclick="showSelectionScreen()">📑 Seleziona elenchi</button>
+      <label class="btn btn-load">📂 Carica altro<input type="file" accept=".xlsx,.xls" id="fileInputAlt" style="display:none"></label>
+      <button class="btn btn-export" onclick="doExport()">💾 Scarica Export_modified.xlsx</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header"><span id="sidebarTitle" style="font-weight:600;font-size:13px;color:#475569"></span><button class="sidebar-toggle" onclick="toggleSidebar()">◀</button></div>
+      <div id="sidebarBody"><div class="sidebar-search"><input type="text" placeholder="Filtra gruppi..." id="sidebarSearch" oninput="filterGroups()"></div><div class="sidebar-list" id="sidebarList"></div></div>
+    </div>
+    <div class="content" id="content">
+      <div class="empty-state" id="emptyState"><div class="icon">📋</div><div style="font-size:15px;font-weight:500">Seleziona un gruppo dalla barra laterale</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast hidden" id="toast"></div>
+
+<script>
+const LANGS=["it-IT","en-US","en-GB","de-DE"];
+const LANG_LABELS={"it-IT":"IT","en-US":"EN","en-GB":"GB","de-DE":"DE"};
+const LANG_COLORS={"it-IT":"#2563eb","en-US":"#dc2626","en-GB":"#7c3aed","de-DE":"#ca8a04"};
+
+let allTextLists=[],allEntries=[];
+let textLists=[],entries=[],groups={};
+let selectedListNames=[],compareSelectedLists=[];
+let activeLangs=[...LANGS];
+let selectedGroup=null,sidebarCollapsed=false,changeCount=0,fileName="";
+let gridCells=[],isSelecting=false,selectionAnchor=null,selectedCoords=[];
+let originalTextMap={},undoStack=[],lastCopiedMatrix=null;
+
+const noVal=v=>(v===null||v===undefined||String(v).trim()===""||String(v)==="<No value>")?"":String(v);
+const showLoading=msg=>{document.getElementById('loadingText').textContent=msg||'Caricamento...';document.getElementById('loadingOverlay').style.display='flex';};
+const hideLoading=()=>document.getElementById('loadingOverlay').style.display='none';
+const showToast=msg=>{const t=document.getElementById('toast');t.textContent=msg;t.classList.remove('hidden');setTimeout(()=>t.classList.add('hidden'),2400);};
+const entryKey=(entry,lang)=>`${entry.parent}|${entry.value}|${lang}`;
+const getOriginalText=(entry,lang)=>originalTextMap[entryKey(entry,lang)]||'';
+const isCellModified=(entry,lang)=>(entry.texts[lang]||'')!==getOriginalText(entry,lang);
+
+function recalcChangeCount(){
+  changeCount=allEntries.reduce((acc,e)=>acc+LANGS.reduce((n,lang)=>n+(isCellModified(e,lang)?1:0),0),0);
+  updateChangesBadge();
+}
+
+function resetGridSelection(){
+  selectedCoords=[];
+  refreshSelectionClasses();
+}
+
+function refreshSelectionClasses(){
+  const selectedSet=new Set(selectedCoords.map(c=>`${c.row}|${c.col}`));
+  gridCells.forEach(c=>{
+    const id=`${c.row}|${c.col}`;
+    c.el.classList.toggle('selected',selectedSet.has(id));
+    c.el.classList.toggle('anchor',selectionAnchor&&selectionAnchor.row===c.row&&selectionAnchor.col===c.col);
+  });
+}
+
+function beginGridTracking(){
+  gridCells=[];
+  isSelecting=false;
+  selectionAnchor=null;
+  selectedCoords=[];
+}
+
+function registerGridCell(el,entry,lang,row,col){
+  const cell={el,entry,lang,row,col};
+  gridCells.push(cell);
+  el.addEventListener('mousedown',e=>{
+    if(e.button!==0) return;
+    e.preventDefault();
+
+    if(e.shiftKey&&selectionAnchor){
+      isSelecting=false;
+      applySelection(cell,{append:false});
+      return;
+    }
+
+    if(e.ctrlKey||e.metaKey){
+      isSelecting=false;
+      const idx=selectedCoords.findIndex(x=>x.row===cell.row&&x.col===cell.col);
+      if(idx>=0){
+        selectedCoords.splice(idx,1);
+      }else{
+        selectedCoords.push(cell);
+        selectionAnchor=cell;
+      }
+      refreshSelectionClasses();
+      return;
+    }
+
+    isSelecting=true;
+    selectionAnchor=cell;
+    applySelection(cell,{append:false});
+  });
+  el.addEventListener('mouseenter',()=>{if(isSelecting&&selectionAnchor) applySelection(cell,{append:false});});
+}
+
+function applySelection(target,{append=false}={}){
+  if(!selectionAnchor) return;
+  if(!append) selectedCoords=[];
+  const r1=selectionAnchor.row,r2=target.row,c1=selectionAnchor.col,c2=target.col;
+  const mode=(r1===r2)?'horizontal':(c1===c2)?'vertical':'both';
+  const minR=Math.min(r1,r2),maxR=Math.max(r1,r2),minC=Math.min(c1,c2),maxC=Math.max(c1,c2);
+  const map=new Map(selectedCoords.map(c=>[`${c.row}|${c.col}`,c]));
+  gridCells.forEach(c=>{
+    const inSel=(mode==='horizontal')?(c.row===r1&&c.col>=minC&&c.col<=maxC):
+      (mode==='vertical')?(c.col===c1&&c.row>=minR&&c.row<=maxR):
+      (c.row>=minR&&c.row<=maxR&&c.col>=minC&&c.col<=maxC);
+    if(inSel) map.set(`${c.row}|${c.col}`,c);
+  });
+  selectedCoords=[...map.values()];
+  refreshSelectionClasses();
+}
+
+function refreshCellDisplay(cell){
+  const val=(cell.entry?.texts[cell.lang])||'';
+  cell.el.textContent=val||'—';
+  cell.el.classList.toggle('empty',!val);
+  cell.el.classList.toggle('modified',isCellModified(cell.entry,cell.lang));
+}
+
+function setEntryText(entry,lang,nv,{record=true}={}){
+  const ov=entry.texts[lang]||'';
+  if(nv===ov) return false;
+  entry.texts[lang]=nv;
+  if(record) undoStack.push({changes:[{entry,lang,oldVal:ov,newVal:nv}]});
+  return true;
+}
+
+function applyBatchChanges(changes,{record=true}={}){
+  const effective=[];
+  changes.forEach(ch=>{
+    const ov=ch.entry.texts[ch.lang]||'';
+    if(ov===ch.newVal) return;
+    ch.oldVal=ov;
+    ch.entry.texts[ch.lang]=ch.newVal;
+    effective.push(ch);
+  });
+  if(effective.length&&record) undoStack.push({changes:effective});
+  if(effective.length){
+    gridCells.forEach(c=>{if(effective.some(x=>x.entry===c.entry&&x.lang===c.lang)) refreshCellDisplay(c);});
+    recalcChangeCount();
+  }
+}
+
+document.addEventListener('mouseup',()=>{isSelecting=false;});
+
+document.addEventListener('copy',e=>{
+  if(!selectedCoords.length) return;
+  e.preventDefault();
+  const minR=Math.min(...selectedCoords.map(c=>c.row)),maxR=Math.max(...selectedCoords.map(c=>c.row));
+  const minC=Math.min(...selectedCoords.map(c=>c.col)),maxC=Math.max(...selectedCoords.map(c=>c.col));
+  const lines=[];
+  for(let r=minR;r<=maxR;r++){
+    const row=[];
+    for(let c=minC;c<=maxC;c++){
+      const found=gridCells.find(x=>x.row===r&&x.col===c);
+      row.push(found?.entry?(found.entry.texts[found.lang]||''):'');
+    }
+    lines.push(row.join('\t'));
+  }
+  lastCopiedMatrix=lines.map(r=>r.split('\t'));
+  e.clipboardData.setData('text/plain',lines.join('\n'));
+});
+
+document.addEventListener('paste',e=>{
+  if(!selectedCoords.length) return;
+  const tgt=e.target;
+  if(tgt&&((tgt.tagName||'').toLowerCase()==='input'||(tgt.tagName||'').toLowerCase()==='textarea')) return;
+  const txt=e.clipboardData?.getData('text/plain');
+  if(!txt) return;
+  e.preventDefault();
+  const rows=txt.replace(/\r/g,'').split('\n').map(r=>r.split('\t'));
+  if(rows.length===1&&rows[0].length===1){
+    applyBatchChanges(selectedCoords.filter(c=>c.entry).map(c=>({entry:c.entry,lang:c.lang,newVal:rows[0][0]})));
+    return;
+  }
+  const minR=Math.min(...selectedCoords.map(c=>c.row)),maxR=Math.max(...selectedCoords.map(c=>c.row));
+  const minC=Math.min(...selectedCoords.map(c=>c.col)),maxC=Math.max(...selectedCoords.map(c=>c.col));
+  const singleCell=selectedCoords.length===1;
+  const changes=[];
+  if(singleCell){
+    const anchor=selectedCoords[0];
+    for(let r=0;r<rows.length;r++) for(let c=0;c<rows[r].length;c++){
+      const found=gridCells.find(x=>x.row===anchor.row+r&&x.col===anchor.col+c);
+      if(found&&found.entry) changes.push({entry:found.entry,lang:found.lang,newVal:rows[r][c]});
+    }
+  }else{
+    for(let r=minR;r<=maxR;r++) for(let c=minC;c<=maxC;c++){
+      const val=rows[r-minR]?.[c-minC];
+      if(val===undefined) continue;
+      const found=gridCells.find(x=>x.row===r&&x.col===c);
+      if(found&&found.entry) changes.push({entry:found.entry,lang:found.lang,newVal:val});
+    }
+  }
+  applyBatchChanges(changes);
+});
+
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){
+    const tgt=e.target;
+    if(tgt&&((tgt.tagName||'').toLowerCase()==='input'||(tgt.tagName||'').toLowerCase()==='textarea')) return;
+    const step=undoStack.pop();
+    if(!step) return;
+    e.preventDefault();
+    step.changes.forEach(ch=>{ch.entry.texts[ch.lang]=ch.oldVal;});
+    gridCells.forEach(c=>{if(step.changes.some(x=>x.entry===c.entry&&x.lang===c.lang)) refreshCellDisplay(c);});
+    recalcChangeCount();
+  }
+});
+
+function buildGroups(names){
+  const map={};
+  names.forEach(name=>{const m=name.match(/^(.*?)(_\d+)$/);const base=m?m[1]:name;(map[base]??=[]).push(name);});
+  Object.keys(map).forEach(k=>map[k].sort((a,b)=>parseInt((a.match(/_(\d+)$/)||[,0])[1])-parseInt((b.match(/_(\d+)$/)||[,0])[1])));
+  const out={};
+  Object.keys(map).sort((a,b)=>{const ma=map[a].length>1?0:1;const mb=map[b].length>1?0:1;return ma!==mb?ma-mb:a.localeCompare(b);}).forEach(k=>out[k]=map[k]);
+  return out;
+}
+
+function parseFile(arrayBuffer,name){
+  showLoading('Elaborazione '+name+'...'); fileName=name;
+  try{
+    const wb=XLSX.read(arrayBuffer,{type:'array'});
+    const ws1=wb.Sheets['TextList']; if(!ws1) throw new Error("Foglio 'TextList' non trovato");
+    allTextLists=XLSX.utils.sheet_to_json(ws1,{defval:""}).map(r=>({name:r['Name']||"",listRange:r['ListRange']||"",comments:{"it-IT":noVal(r['Comment [it-IT]']),"en-US":noVal(r['Comment [en-US]']),"en-GB":noVal(r['Comment [en-GB]']),"de-DE":noVal(r['Comment [de-DE]'])}}));
+    const ws2=wb.Sheets['TextListEntry']; if(!ws2) throw new Error("Foglio 'TextListEntry' non trovato");
+    allEntries=XLSX.utils.sheet_to_json(ws2,{defval:""}).map(r=>({name:r['Name']||"",parent:r['Parent']||"",defaultEntry:r['DefaultEntry']||"",value:String(r['Value']??""),texts:{"it-IT":noVal(r['Text [it-IT]']),"en-US":noVal(r['Text [en-US]']),"en-GB":noVal(r['Text [en-GB]']),"de-DE":noVal(r['Text [de-DE]'])},fieldInfos:r['FieldInfos']||""}));
+    selectedListNames=allTextLists.map(t=>t.name);
+    originalTextMap={};
+    allEntries.forEach(e=>LANGS.forEach(lang=>{originalTextMap[entryKey(e,lang)]=e.texts[lang]||'';}));
+    undoStack=[];
+    changeCount=0; selectedGroup=null;
+    hideLoading();
+    showSelectionScreen();
+  }catch(err){hideLoading();alert('Errore: '+err.message);}
+}
+
+function applySelectedScope(){
+  const set=new Set(selectedListNames);
+  textLists=allTextLists.filter(t=>set.has(t.name));
+  entries=allEntries.filter(e=>set.has(e.parent));
+  groups=buildGroups(textLists.map(t=>t.name));
+  compareSelectedLists=[...textLists.map(t=>t.name)];
+}
+
+function showSelectionScreen(){
+  document.getElementById('uploadScreen').style.display='none';
+  document.getElementById('editorScreen').style.display='none';
+  document.getElementById('compareScreen').style.display='none';
+  document.getElementById('selectionScreen').style.display='flex';
+  renderSelectionList();
+}
+
+function renderSelectionList(){
+  const q=(document.getElementById('selectionSearch').value||'').toLowerCase();
+  const list=document.getElementById('selectionList'); list.innerHTML='';
+  const selectedSet=new Set(selectedListNames);
+  const filtered=allTextLists.filter(t=>!q||t.name.toLowerCase().includes(q));
+  filtered.forEach(t=>{
+    const cnt=allEntries.filter(e=>e.parent===t.name).length;
+    const row=document.createElement('div'); row.className='sel-item';
+    row.innerHTML='<label><input type="checkbox" data-name="'+t.name+'" '+(selectedSet.has(t.name)?'checked':'')+'><span>'+t.name+'</span></label><span class="sel-meta">'+cnt+' voci</span>';
+    list.appendChild(row);
+  });
+  list.querySelectorAll('input[type="checkbox"]').forEach(cb=>cb.onchange=()=>{
+    const n=cb.getAttribute('data-name');
+    if(cb.checked&&!selectedSet.has(n)) selectedListNames.push(n);
+    if(!cb.checked) selectedListNames=selectedListNames.filter(x=>x!==n);
+    updateSelectionInfo(filtered.length);
+  });
+  updateSelectionInfo(filtered.length);
+}
+
+function updateSelectionInfo(shown){
+  document.getElementById('selectionInfo').textContent='Selezionati '+selectedListNames.length+' di '+allTextLists.length+' elenchi · mostrati '+shown;
+}
+
+function selectAllLists(yes){selectedListNames=yes?allTextLists.map(t=>t.name):[]; renderSelectionList();}
+
+function startEditingSelected(){
+  if(!selectedListNames.length){showToast('Seleziona almeno un elenco'); return;}
+  applySelectedScope();
+  showEditor();
+}
+
+function showCompareScreen(){
+  if(!textLists.length&&selectedListNames.length) applySelectedScope();
+  document.getElementById('selectionScreen').style.display='none';
+  document.getElementById('uploadScreen').style.display='none';
+  document.getElementById('editorScreen').style.display='none';
+  document.getElementById('compareScreen').style.display='flex';
+  document.getElementById('compareFileLabel').textContent=fileName;
+  buildLangButtons('compareLangButtons');
+  updateChangesBadge();
+  renderCompareList();
+  renderCompareTable();
+}
+
+function renderCompareList(){
+  const q=(document.getElementById('compareSearch').value||'').toLowerCase();
+  const wrap=document.getElementById('compareList'); wrap.innerHTML='';
+  const set=new Set(compareSelectedLists);
+  textLists.filter(t=>!q||t.name.toLowerCase().includes(q)).forEach(t=>{
+    const cnt=entries.filter(e=>e.parent===t.name).length;
+    const row=document.createElement('div'); row.className='sel-item';
+    row.innerHTML='<label><input type="checkbox" data-name="'+t.name+'" '+(set.has(t.name)?'checked':'')+'><span>'+t.name+'</span></label><span class="sel-meta">'+cnt+' voci</span>';
+    wrap.appendChild(row);
+  });
+  wrap.querySelectorAll('input[type="checkbox"]').forEach(cb=>cb.onchange=()=>{
+    const n=cb.getAttribute('data-name');
+    if(cb.checked&&!compareSelectedLists.includes(n)) compareSelectedLists.push(n);
+    if(!cb.checked) compareSelectedLists=compareSelectedLists.filter(x=>x!==n);
+    renderCompareTable();
+  });
+}
+
+function selectAllCompareLists(yes){
+  compareSelectedLists=yes?textLists.map(t=>t.name):[];
+  renderCompareList();
+  renderCompareTable();
+}
+
+function renderCompareTable(){
+  const names=compareSelectedLists;
+  const info=document.getElementById('compareInfo');
+  const wrap=document.getElementById('compareTableWrap');
+  if(!names.length){
+    info.textContent='Seleziona almeno un elenco dalla colonna sinistra.';
+    wrap.innerHTML='';
+    return;
+  }
+  const eMap={}; entries.forEach(e=>{if(names.includes(e.parent)) eMap[e.parent+'|'+e.value]=e;});
+  const vals=[...new Set(entries.filter(e=>names.includes(e.parent)).map(e=>e.value))].sort((a,b)=>{const na=Number(a),nb=Number(b);if(!isNaN(na)&&!isNaN(nb)) return na-nb; return a.localeCompare(b);});
+  info.textContent='Visualizzazione insieme: '+names.length+' elenchi · '+vals.length+' valori';
+
+  beginGridTracking();
+  const table=document.createElement('table');
+  const thead=document.createElement('thead');
+  const tr1=document.createElement('tr');
+  const thVal=document.createElement('th'); thVal.className='val-col'; thVal.textContent='Valore'; tr1.appendChild(thVal);
+  names.forEach((n,i)=>{const th=document.createElement('th'); th.colSpan=activeLangs.length; if(i>0) th.className='sep'; th.innerHTML='<div style="font-size:12px;font-weight:700;color:#334155">'+n.replace('Z2000_','')+'</div>'; tr1.appendChild(th);});
+  thead.appendChild(tr1);
+  const tr2=document.createElement('tr'); tr2.className='sub'; const thE=document.createElement('th'); thE.className='val-col'; tr2.appendChild(thE);
+  names.forEach((n,li)=>activeLangs.forEach((lang,idx)=>{const th=document.createElement('th'); if(idx===0&&li>0) th.className='sep'; th.style.color=LANG_COLORS[lang]; th.textContent=LANG_LABELS[lang]; tr2.appendChild(th);}));
+  thead.appendChild(tr2); table.appendChild(thead);
+
+  const tbody=document.createElement('tbody');
+  vals.forEach((val,rowIdx)=>{
+    const tr=document.createElement('tr');
+    const tdVal=document.createElement('td'); tdVal.className='val-col'; tdVal.textContent=val; tr.appendChild(tdVal);
+    names.forEach((n,li)=>activeLangs.forEach((lang,idx)=>{
+      const colIdx=li*activeLangs.length+idx;
+      const td=document.createElement('td'); if(idx===0&&li>0) td.className='sep';
+      const e=eMap[n+'|'+val];
+      if(e) td.appendChild(mkCell(e,lang,rowIdx,colIdx)); else td.innerHTML='<span style="color:#e2e8f0;font-size:11px">—</span>';
+      tr.appendChild(td);
+    }));
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  wrap.innerHTML=''; wrap.appendChild(table);
+}
+
+function showEditor(){
+  document.getElementById('selectionScreen').style.display='none';
+  document.getElementById('uploadScreen').style.display='none';
+  document.getElementById('compareScreen').style.display='none';
+  document.getElementById('editorScreen').style.display='flex';
+  document.getElementById('fileLabel').textContent=fileName;
+  buildLangButtons('langButtons');
+  updateChangesBadge();
+  buildSidebar();
+  const old=document.getElementById('groupView'); if(old) old.remove();
+  document.getElementById('emptyState').style.display='';
+}
+
+function buildLangButtons(containerId){
+  const c=document.getElementById(containerId); c.innerHTML='';
+  LANGS.forEach(lang=>{const b=document.createElement('button'); b.className='lang-btn'+(activeLangs.includes(lang)?'':' off'); b.style.background=activeLangs.includes(lang)?LANG_COLORS[lang]:''; b.textContent=LANG_LABELS[lang]; b.onclick=()=>toggleLang(lang); c.appendChild(b);});
+}
+
+function toggleLang(lang){
+  if(activeLangs.includes(lang)){if(activeLangs.length===1) return; activeLangs=activeLangs.filter(l=>l!==lang);} else activeLangs.push(lang);
+  buildLangButtons('langButtons');
+  buildLangButtons('compareLangButtons');
+  if(document.getElementById('editorScreen').style.display==='flex'&&selectedGroup) renderGroup(selectedGroup);
+  if(document.getElementById('compareScreen').style.display==='flex') renderCompareTable();
+}
+
+function updateChangesBadge(){
+  const txt=changeCount>0?changeCount+' modifiche':'';
+  const b1=document.getElementById('changesBadge');
+  const b2=document.getElementById('compareChangesBadge');
+  if(changeCount>0){b1.style.display='';b2.style.display='';b1.textContent=txt;b2.textContent=txt;}else{b1.style.display='none';b2.style.display='none';}
+}
+
+function doExport(){
+  const wb=XLSX.utils.book_new();
+  const tlRows=allTextLists.map(tl=>({"Name":tl.name,"ListRange":tl.listRange,"Comment [it-IT]":tl.comments['it-IT']||'<No value>',"Comment [en-US]":tl.comments['en-US']||'<No value>',"Comment [en-GB]":tl.comments['en-GB']||'<No value>',"Comment [de-DE]":tl.comments['de-DE']||'<No value>'}));
+  const eRows=allEntries.map(e=>{let val=e.value;const num=Number(val);if(!isNaN(num)&&val.trim()!=='') val=num; return{"Name":e.name,"Parent":e.parent,"DefaultEntry":e.defaultEntry,"Value":val,"Text [it-IT]":e.texts['it-IT']||'<No value>',"Text [en-US]":e.texts['en-US']||'<No value>',"Text [en-GB]":e.texts['en-GB']||'<No value>',"Text [de-DE]":e.texts['de-DE']||'<No value>',"FieldInfos":e.fieldInfos};});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(tlRows),'TextList');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(eRows),'TextListEntry');
+  XLSX.writeFile(wb,'Export_modified.xlsx');
+  showToast('✅ File scaricato: Export_modified.xlsx');
+}
+
+function handleFile(file){if(!file) return; const r=new FileReader(); r.onload=e=>parseFile(new Uint8Array(e.target.result),file.name); r.readAsArrayBuffer(file);}
+
+document.getElementById('fileInput').addEventListener('change',function(){handleFile(this.files[0]); this.value='';});
+document.getElementById('fileInputAlt').addEventListener('change',function(){handleFile(this.files[0]); this.value='';});
+const dropZone=document.getElementById('dropZone');
+['dragenter','dragover'].forEach(evt=>dropZone.addEventListener(evt,e=>{e.preventDefault();e.stopPropagation();dropZone.classList.add('dragover');}));
+['dragleave','drop'].forEach(evt=>dropZone.addEventListener(evt,e=>{e.preventDefault();e.stopPropagation();dropZone.classList.remove('dragover');}));
+dropZone.addEventListener('drop',e=>{const file=e.dataTransfer.files[0]; if(file) handleFile(file);});
+document.body.addEventListener('dragover',e=>e.preventDefault());
+document.body.addEventListener('drop',e=>{e.preventDefault();const file=e.dataTransfer.files[0];if(file&&file.name.match(/\.xlsx?$/i)) handleFile(file);});
+
+function toggleSidebar(){sidebarCollapsed=!sidebarCollapsed;document.getElementById('sidebar').classList.toggle('collapsed',sidebarCollapsed);document.getElementById('sidebarBody').style.display=sidebarCollapsed?'none':'';document.getElementById('sidebarTitle').style.display=sidebarCollapsed?'none':'';}
+function buildSidebar(){document.getElementById('sidebarTitle').textContent='Gruppi ('+Object.keys(groups).length+')';filterGroups();}
+function filterGroups(){
+  const search=(document.getElementById('sidebarSearch').value||'').toLowerCase();
+  const list=document.getElementById('sidebarList'); list.innerHTML='';
+  Object.keys(groups).filter(k=>!search||k.toLowerCase().includes(search)).forEach(gk=>{
+    const names=groups[gk], isMulti=names.length>1, entryCount=entries.filter(e=>names.includes(e.parent)).length;
+    const div=document.createElement('div');
+    div.className='group-item'+(selectedGroup===gk?' active':'');
+    div.innerHTML='<div class="group-item-name">'+gk.replace('Z2000_','')+(isMulti?'<span class="group-item-multi">×'+names.length+'</span>':'')+'</div><div class="group-item-meta">'+(isMulti?names.length+' elenchi':'1 elenco')+' · '+entryCount+' voci</div>';
+    div.onclick=()=>{selectedGroup=gk;filterGroups();renderGroup(gk);};
+    list.appendChild(div);
+  });
+}
+
+function renderGroup(gk){
+  const names=groups[gk]; if(!names) return;
+  document.getElementById('emptyState').style.display='none';
+  const old=document.getElementById('groupView'); if(old) old.remove();
+  const content=document.getElementById('content');
+  const wrap=document.createElement('div'); wrap.id='groupView'; wrap.style.cssText='flex:1;display:flex;flex-direction:column;overflow:hidden';
+
+  const valSet=new Set(); entries.forEach(e=>{if(names.includes(e.parent)) valSet.add(e.value);});
+  const allVals=[...valSet].sort((a,b)=>{const na=Number(a),nb=Number(b); if(!isNaN(na)&&!isNaN(nb)) return na-nb; return a.localeCompare(b);});
+  const eMap={}; entries.forEach(e=>{if(names.includes(e.parent)) eMap[e.parent+'|'+e.value]=e;});
+  const isMulti=names.length>1;
+
+  const hdr=document.createElement('div'); hdr.className='content-header';
+  hdr.innerHTML='<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><h2>'+gk.replace('Z2000_','')+'</h2><span class="info">'+(isMulti?names.length+' elenchi · ':'')+allVals.length+' valori</span></div><input type="text" class="content-search" placeholder="Cerca per valore o testo..." id="contentSearch">';
+  wrap.appendChild(hdr);
+  const tableWrap=document.createElement('div'); tableWrap.className='content-table-wrap';
+
+  function buildTable(vals){
+    beginGridTracking();
+    const table=document.createElement('table'); const thead=document.createElement('thead');
+    const tr1=document.createElement('tr'); const thVal=document.createElement('th'); thVal.className='val-col'; thVal.textContent='Valore'; tr1.appendChild(thVal);
+    if(isMulti){
+      const shortNames=names.map(n=>{const m=n.match(/_(\d+)$/); return m?('#'+m[1]):n.replace('Z2000_','');});
+      names.forEach((n,i)=>{const th=document.createElement('th'); th.colSpan=activeLangs.length; if(i>0) th.className='sep'; th.innerHTML='<div style="font-size:12px;font-weight:700;color:#334155">'+shortNames[i]+'</div>'; tr1.appendChild(th);});
+      thead.appendChild(tr1);
+      const tr2=document.createElement('tr'); tr2.className='sub'; const thE=document.createElement('th'); thE.className='val-col'; tr2.appendChild(thE);
+      names.forEach((n,li)=>activeLangs.forEach((lang,idx)=>{const th=document.createElement('th'); if(idx===0&&li>0) th.className='sep'; th.style.color=LANG_COLORS[lang]; th.textContent=LANG_LABELS[lang]; tr2.appendChild(th);}));
+      thead.appendChild(tr2);
+    }else{activeLangs.forEach(lang=>{const th=document.createElement('th'); th.style.color=LANG_COLORS[lang]; th.textContent=LANG_LABELS[lang]; tr1.appendChild(th);}); thead.appendChild(tr1);}
+    table.appendChild(thead);
+
+    const tbody=document.createElement('tbody');
+    vals.forEach((val,rowIdx)=>{
+      const tr=document.createElement('tr'); const tdVal=document.createElement('td'); tdVal.className='val-col'; tdVal.textContent=val; tr.appendChild(tdVal);
+      (isMulti?names:[names[0]]).forEach((n,li)=>activeLangs.forEach((lang,idx)=>{const colIdx=li*activeLangs.length+idx;const td=document.createElement('td'); if(isMulti&&idx===0&&li>0) td.className='sep'; const e=eMap[n+'|'+val]; if(e) td.appendChild(mkCell(e,lang,rowIdx,colIdx)); else td.innerHTML='<span style="color:#e2e8f0;font-size:11px">—</span>'; tr.appendChild(td);}));
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody); return table;
+  }
+
+  tableWrap.appendChild(buildTable(allVals)); wrap.appendChild(tableWrap); content.appendChild(wrap);
+  document.getElementById('contentSearch').oninput=function(){const s=this.value.toLowerCase(); const filtered=!s?allVals:allVals.filter(v=>v.toLowerCase().includes(s)||names.some(n=>{const e=eMap[n+'|'+v]; return e&&activeLangs.some(l=>(e.texts[l]||'').toLowerCase().includes(s));})); tableWrap.innerHTML=''; tableWrap.appendChild(buildTable(filtered));};
+}
+
+function mkCell(entry,lang,row,col){
+  const div=document.createElement('div'); const val=entry.texts[lang]||'';
+  div.className='cell'+(val?'':' empty')+(isCellModified(entry,lang)?' modified':''); div.textContent=val||'—'; div.title='Clicca per modificare';
+  registerGridCell(div,entry,lang,row,col);
+  div.ondblclick=()=>{
+    const inp=document.createElement('input'); inp.className='cell-input'; inp.style.border='2px solid '+(LANG_COLORS[lang]||'#3b82f6'); inp.value=entry.texts[lang]||'';
+    div.replaceWith(inp); inp.focus();
+    const done=()=>{const nv=inp.value; setEntryText(entry,lang,nv); recalcChangeCount(); inp.replaceWith(mkCell(entry,lang,row,col));};
+    inp.onblur=done; inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();done();} if(e.key==='Escape'){inp.value=entry.texts[lang]||'';done();}};
+  };
+  return div;
+}
+</script>
+</body>
+</html>
