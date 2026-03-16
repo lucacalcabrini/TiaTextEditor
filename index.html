@@ -75,6 +75,10 @@ thead tr.sub th{background:#f1f5f9;font-size:10px}
 .cell.selected{background:#dbeafe!important;border-color:#60a5fa}
 .cell.anchor{outline:2px solid #2563eb;outline-offset:-2px}
 .cell-input{width:100%;border-radius:4px;padding:3px 6px;font-size:12px;font-family:'JetBrains Mono',monospace;outline:none;background:#fff}
+.release-box{display:inline-flex;align-items:center;gap:6px;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:2px 8px}
+.release-box span{font-size:10px;color:#94a3b8;font-weight:700;letter-spacing:.04em}
+.release-input{width:120px;background:#0f172a;color:#e2e8f0;border:1px solid #475569;border-radius:6px;padding:3px 6px;font-size:11px;font-family:'JetBrains Mono',monospace;outline:none}
+.release-input:focus{border-color:#60a5fa}
 
 .empty-state{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:#94a3b8}
 .empty-state .icon{font-size:48px;opacity:.3}
@@ -151,6 +155,7 @@ thead tr.sub th{background:#f1f5f9;font-size:10px}
       <span style="font-size:20px">📊</span><span class="topbar-title">Vista elenchi testi insieme</span>
       <span class="badge badge-file" id="compareFileLabel"></span>
       <span class="badge badge-changes" id="compareChangesBadge" style="display:none"></span>
+      <label class="release-box"><span>RELEASE</span><input class="release-input" id="releaseInputCompare" oninput="onReleaseInput(this.value)"></label>
     </div>
     <div class="lang-buttons" id="compareLangButtons"></div>
     <div class="topbar-actions">
@@ -182,6 +187,7 @@ thead tr.sub th{background:#f1f5f9;font-size:10px}
       <span class="topbar-title">TIA Text Editor</span>
       <span class="badge badge-file" id="fileLabel"></span>
       <span class="badge badge-changes" id="changesBadge" style="display:none"></span>
+      <label class="release-box"><span>RELEASE</span><input class="release-input" id="releaseInputEditor" oninput="onReleaseInput(this.value)"></label>
     </div>
     <div class="lang-buttons" id="langButtons"></div>
     <div class="topbar-actions">
@@ -214,10 +220,14 @@ let textLists=[],entries=[],groups={};
 let selectedListNames=[],compareSelectedLists=[];
 let activeLangs=[...LANGS];
 let selectedGroup=null,sidebarCollapsed=false,changeCount=0,fileName="";
+let releaseTag="";
 let gridCells=[],isSelecting=false,selectionAnchor=null,selectedCoords=[];
 let originalTextMap={},undoStack=[],lastCopiedMatrix=null;
 
 const noVal=v=>(v===null||v===undefined||String(v).trim()===""||String(v)==="<No value>")?"":String(v);
+const defaultReleaseTag=()=>{const d=new Date();const y=d.getFullYear();const m=String(d.getMonth()+1).padStart(2,'0');const da=String(d.getDate()).padStart(2,'0');return `REL-${y}${m}${da}`;};
+function syncReleaseFields(){['releaseInputEditor','releaseInputCompare'].forEach(id=>{const el=document.getElementById(id);if(el) el.value=releaseTag;});}
+function onReleaseInput(v){releaseTag=(v||'').trim();syncReleaseFields();}
 const showLoading=msg=>{document.getElementById('loadingText').textContent=msg||'Caricamento...';document.getElementById('loadingOverlay').style.display='flex';};
 const hideLoading=()=>document.getElementById('loadingOverlay').style.display='none';
 const showToast=msg=>{const t=document.getElementById('toast');t.textContent=msg;t.classList.remove('hidden');setTimeout(()=>t.classList.add('hidden'),2400);};
@@ -419,6 +429,8 @@ function parseFile(arrayBuffer,name){
     originalTextMap={};
     allEntries.forEach(e=>LANGS.forEach(lang=>{originalTextMap[entryKey(e,lang)]=e.texts[lang]||'';}));
     undoStack=[];
+    releaseTag=defaultReleaseTag();
+    syncReleaseFields();
     changeCount=0; selectedGroup=null;
     hideLoading();
     showSelectionScreen();
@@ -480,6 +492,7 @@ function showCompareScreen(){
   document.getElementById('editorScreen').style.display='none';
   document.getElementById('compareScreen').style.display='flex';
   document.getElementById('compareFileLabel').textContent=fileName;
+  syncReleaseFields();
   buildLangButtons('compareLangButtons');
   updateChangesBadge();
   renderCompareList();
@@ -557,6 +570,7 @@ function showEditor(){
   document.getElementById('compareScreen').style.display='none';
   document.getElementById('editorScreen').style.display='flex';
   document.getElementById('fileLabel').textContent=fileName;
+  syncReleaseFields();
   buildLangButtons('langButtons');
   updateChangesBadge();
   buildSidebar();
@@ -587,7 +601,8 @@ function updateChangesBadge(){
 function doExport(){
   const wb=XLSX.utils.book_new();
   const tlRows=allTextLists.map(tl=>({"Name":tl.name,"ListRange":tl.listRange,"Comment [it-IT]":tl.comments['it-IT']||'<No value>',"Comment [en-US]":tl.comments['en-US']||'<No value>',"Comment [en-GB]":tl.comments['en-GB']||'<No value>',"Comment [de-DE]":tl.comments['de-DE']||'<No value>'}));
-  const eRows=allEntries.map(e=>{let val=e.value;const num=Number(val);if(!isNaN(num)&&val.trim()!=='') val=num; return{"Name":e.name,"Parent":e.parent,"DefaultEntry":e.defaultEntry,"Value":val,"Text [it-IT]":e.texts['it-IT']||'<No value>',"Text [en-US]":e.texts['en-US']||'<No value>',"Text [en-GB]":e.texts['en-GB']||'<No value>',"Text [de-DE]":e.texts['de-DE']||'<No value>',"FieldInfos":e.fieldInfos};});
+  const cleanRelease=(releaseTag||defaultReleaseTag()).replace(/[;\n\r]/g,' ').trim();
+  const eRows=allEntries.map(e=>{let val=e.value;const num=Number(val);if(!isNaN(num)&&val.trim()!=='') val=num; const baseField=(e.fieldInfos||'').replace(/(?:^|;)\s*SWRelease=[^;]*/g,'').replace(/^;+|;+$|;;+/g,'').trim(); const fieldInfo=cleanRelease?(baseField?`${baseField};SWRelease=${cleanRelease}`:`SWRelease=${cleanRelease}`):baseField; return{"Name":e.name,"Parent":e.parent,"DefaultEntry":e.defaultEntry,"Value":val,"Text [it-IT]":e.texts['it-IT']||'<No value>',"Text [en-US]":e.texts['en-US']||'<No value>',"Text [en-GB]":e.texts['en-GB']||'<No value>',"Text [de-DE]":e.texts['de-DE']||'<No value>',"FieldInfos":fieldInfo};});
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(tlRows),'TextList');
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(eRows),'TextListEntry');
   XLSX.writeFile(wb,'Export_modified.xlsx');
