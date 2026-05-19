@@ -233,6 +233,11 @@ tr:hover .row-del-btn{opacity:1}
         style="padding:6px 12px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#e2e8f0;font-size:13px;font-family:'JetBrains Mono',monospace;width:140px;text-align:center"
         oninput="setVersion(this.value)">
     </div>
+    <div id="resumeSessionBanner" style="display:none;margin-top:18px;background:#1e293b;border:1px solid #3b82f6;border-radius:10px;padding:12px 20px;display:none;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap">
+      <span style="font-size:13px;color:#94a3b8">Sessione attiva:</span>
+      <span id="resumeFileName" style="font-family:'JetBrains Mono',monospace;color:#60a5fa;font-size:13px;font-weight:600"></span>
+      <button onclick="resumeSession()" style="padding:7px 18px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">↩ Riprendi sessione</button>
+    </div>
   </div>
 </div>
 
@@ -357,7 +362,10 @@ tr:hover .row-del-btn{opacity:1}
     </div>
     <div class="selection-list" id="selectionList"></div>
     <div class="selector-footer">
-      <div id="selectionInfo" class="sel-meta"></div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button id="selBackBtn" class="pill-btn" style="display:none" onclick="goBackFromSelection()">← Torna all'editor</button>
+        <div id="selectionInfo" class="sel-meta"></div>
+      </div>
       <button class="primary-btn" onclick="startEditingSelected()">Apri editor gruppi</button>
     </div>
   </div>
@@ -380,6 +388,7 @@ tr:hover .row-del-btn{opacity:1}
       <button class="btn btn-lists" onclick="showSelectionScreen()">📑 Cambia insieme</button>
       <button class="btn btn-load" onclick="showEditor()">🧭 Editor gruppi</button>
       <button class="btn btn-export" onclick="doExport()">💾 Scarica Export_modified.xlsx</button>
+      <button class="btn btn-load" onclick="showUploadScreen()">🏠 Home</button>
       <button class="btn" style="background:#334155;color:#e2e8f0" onclick="openHelp()">❓ Aiuto</button>
     </div>
   </div>
@@ -418,6 +427,7 @@ tr:hover .row-del-btn{opacity:1}
       <button class="btn btn-lists" onclick="showSelectionScreen()">📑 Seleziona elenchi</button>
       <label class="btn btn-load">📂 Carica altro<input type="file" accept=".xlsx,.xls" id="fileInputAlt" style="display:none"></label>
       <button class="btn btn-export" onclick="doExport()">💾 Scarica Export_modified.xlsx</button>
+      <button class="btn btn-load" onclick="showUploadScreen()">🏠 Home</button>
       <button class="btn" style="background:#334155;color:#e2e8f0" onclick="openHelp()" title="Manuale e Changelog">❓ Aiuto</button>
     </div>
   </div>
@@ -1011,10 +1021,36 @@ const hideLoading=()=>document.getElementById('loadingOverlay').style.display='n
 const showToast=msg=>{const t=document.getElementById('toast');t.textContent=msg;t.classList.remove('hidden');setTimeout(()=>t.classList.add('hidden'),2400);};
 
 function hideAll(){['uploadScreen','selectionScreen','compareScreen','editorScreen','diffUploadScreen','diffScreen','mergeScreen'].forEach(id=>document.getElementById(id).style.display='none');clearSel();}
-function showUploadScreen(){hideAll();document.getElementById('uploadScreen').style.display='flex';}
+function showUploadScreen(){
+  hideAll();
+  document.getElementById('uploadScreen').style.display='flex';
+  const banner=document.getElementById('resumeSessionBanner');
+  if(!banner) return;
+  if(allEntries.length>0){
+    document.getElementById('resumeFileName').textContent=fileName||'sessione precedente';
+    banner.style.display='flex';
+  } else {
+    banner.style.display='none';
+  }
+}
+function resumeSession(){
+  if(!allEntries.length) return;
+  if(selectedGroup) showEditor();
+  else showSelectionScreen();
+}
 function showDiffUploadScreen(){hideAll();document.getElementById('diffUploadScreen').style.display='flex';}
 function showMergeScreen(){hideAll();document.getElementById('mergeScreen').style.display='flex';renderMergeFileList();}
-function showSelectionScreen(){hideAll();document.getElementById('selectionScreen').style.display='flex';renderSelectionList();}
+function showSelectionScreen(){
+  hideAll();
+  document.getElementById('selectionScreen').style.display='flex';
+  renderSelectionList();
+  const backBtn=document.getElementById('selBackBtn');
+  if(backBtn) backBtn.style.display=selectedGroup?'':'none';
+}
+function goBackFromSelection(){
+  if(allEntries.length>0&&selectedGroup) showEditor();
+  else showUploadScreen();
+}
 
 function buildGroups(names){
   const map={};
