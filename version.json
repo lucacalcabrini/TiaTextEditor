@@ -1,6 +1,6 @@
 {
-  "version": "3.3",
-  "filename": "TIA_TextList_Editor_MULTI_v3.3.html",
+  "version": "5.5",
+  "filename": "TIA_TextList_Editor_MULTI_v5.5.html",
   "date": "2026-05-19",
-  "notes": "Aggiunto controllo automatico aggiornamenti dalla repo GitHub con download diretto"
+  "notes": "Merge funzione unisci file, performance, fix vari, auto-update check"
 }

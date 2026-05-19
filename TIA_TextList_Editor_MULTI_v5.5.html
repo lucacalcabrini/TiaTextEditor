@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<title>TIA Portal Text List Editor v3.3</title>
+<title>TIA Portal Text List Editor v5.5</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -167,6 +167,22 @@ tr:hover .row-del-btn{opacity:1}
 .dual-btn.loaded{background:#15803d}
 /* DIFF TABLE section header */
 .diff-section-hdr{padding:7px 14px;background:#f1f5f9;border-bottom:1px solid #e2e8f0;border-top:2px solid #cbd5e1;font-size:12px;font-weight:700;color:#334155;display:flex;gap:10px;align-items:center}
+.merge-file-item{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:10px 14px}
+.merge-file-item .mf-name{flex:1;font-size:13px;font-weight:600;color:#1e293b;font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.merge-file-item .mf-meta{font-size:11px;color:#64748b;white-space:nowrap}
+.merge-file-item .mf-del{border:none;background:none;cursor:pointer;color:#94a3b8;font-size:16px;line-height:1;padding:0 2px;flex-shrink:0}
+.merge-file-item .mf-del:hover{color:#ef4444}
+.conflict-card{border:1px solid #e2e8f0;border-radius:10px;margin-bottom:14px;overflow:hidden}
+.conflict-card-hdr{padding:10px 14px;background:#f8fafc;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f1f5f9}
+.conflict-card-hdr .cc-title{font-size:13px;font-weight:700;color:#0f172a}
+.conflict-card-hdr .cc-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px}
+.conflict-options{display:flex;gap:0;flex-wrap:wrap}
+.conflict-opt{flex:1;min-width:140px;padding:10px 12px;cursor:pointer;border:none;background:#fff;text-align:left;font-size:12px;border-right:1px solid #f1f5f9;border-top:1px solid #f1f5f9;transition:.15s;display:flex;flex-direction:column;gap:3px}
+.conflict-opt:last-child{border-right:none}
+.conflict-opt:hover{background:#f8fafc}
+.conflict-opt.chosen{background:#eff6ff;box-shadow:inset 0 -2px 0 #2563eb}
+.conflict-opt .co-file{font-size:10px;font-weight:700;color:#64748b}
+.conflict-opt .co-val{font-size:12px;color:#0f172a;font-family:'JetBrains Mono',monospace;word-break:break-all}
 .toast{position:fixed;bottom:20px;right:20px;background:#16a34a;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:1000;transition:opacity .3s,transform .3s}
 .toast.hidden{opacity:0;transform:translateY(10px);pointer-events:none}
 .loading-overlay{position:fixed;inset:0;background:rgba(15,23,42,.7);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:16px;color:#fff;font-size:16px;font-weight:600}
@@ -213,10 +229,11 @@ tr:hover .row-del-btn{opacity:1}
     <div style="font-size:40px;margin-bottom:16px">⚙️</div>
     <h1>TIA Portal Text List Editor</h1>
     <p style="margin-bottom:6px">Carica il file Excel esportato dal TIA Portal.<br>Dopo il caricamento puoi scegliere quali elenchi aprire.</p>
-    <p style="font-size:12px;color:#64748b;margin-bottom:18px">versione app: <span style="font-family:'JetBrains Mono',monospace;color:#60a5fa">v3.2</span> &nbsp;·&nbsp; <button onclick="openHelp()" style="background:none;border:none;color:#60a5fa;cursor:pointer;font-size:12px;text-decoration:underline">❓ Manuale & Changelog</button></p>
+    <p style="font-size:12px;color:#64748b;margin-bottom:18px">versione app: <span style="font-family:'JetBrains Mono',monospace;color:#60a5fa">v5.5</span> &nbsp;·&nbsp; <button onclick="openHelp()" style="background:none;border:none;color:#60a5fa;cursor:pointer;font-size:12px;text-decoration:underline">❓ Manuale & Changelog</button></p>
     <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
       <label class="upload-btn">📂 Carica Export.xlsx<input type="file" accept=".xlsx,.xls" id="fileInput" style="display:none"></label>
       <button class="upload-btn" style="background:#0891b2;box-shadow:0 4px 12px rgba(8,145,178,.35)" onclick="showDiffUploadScreen()">🔀 Confronta due file</button>
+      <button class="upload-btn" style="background:#7c3aed;box-shadow:0 4px 12px rgba(124,58,237,.35)" onclick="showMergeScreen()">🔗 Unisci file</button>
     </div>
     <div style="margin-top:20px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:13px;color:#94a3b8">
       🏷 Versione progetto: <input id="versionInput" type="text" placeholder="es. v1.0.0" maxlength="20"
@@ -233,14 +250,20 @@ tr:hover .row-del-btn{opacity:1}
     <h1>Confronto tra due file Excel</h1>
     <p>Carica i due file da confrontare. Verranno evidenziate tutte le differenze tra i testi.</p>
     <div class="dual-upload">
-      <div class="dual-card" id="diffCardA">
+      <div class="dual-card" id="diffCardA"
+        ondragover="event.preventDefault();event.stopPropagation();this.style.borderColor='#0891b2'"
+        ondragleave="this.style.borderColor=''"
+        ondrop="event.preventDefault();event.stopPropagation();this.style.borderColor='';handleDiffFile(event.dataTransfer.files[0],'A')">
         <div class="dual-icon">📄</div>
         <div class="dual-label">File A (originale)</div>
         <div class="dual-filename" id="diffNameA">Nessun file</div>
         <label class="dual-btn" id="diffBtnLabelA">📂 Scegli file<input type="file" accept=".xlsx,.xls" id="diffInputA" style="display:none"></label>
       </div>
       <div style="display:flex;align-items:center;font-size:22px;color:#64748b;font-weight:700">vs</div>
-      <div class="dual-card" id="diffCardB">
+      <div class="dual-card" id="diffCardB"
+        ondragover="event.preventDefault();event.stopPropagation();this.style.borderColor='#059669'"
+        ondragleave="this.style.borderColor=''"
+        ondrop="event.preventDefault();event.stopPropagation();this.style.borderColor='';handleDiffFile(event.dataTransfer.files[0],'B')">
         <div class="dual-icon">📄</div>
         <div class="dual-label">File B (modificato)</div>
         <div class="dual-filename" id="diffNameB">Nessun file</div>
@@ -250,6 +273,79 @@ tr:hover .row-del-btn{opacity:1}
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
       <button class="primary-btn" id="startDiffBtn" disabled onclick="startDiff()" style="background:#0891b2;padding:12px 28px;font-size:15px;border-radius:10px;opacity:.5;cursor:not-allowed">🔀 Avvia confronto</button>
       <button class="primary-btn" onclick="showUploadScreen()" style="background:#475569;padding:12px 28px;font-size:15px;border-radius:10px">← Torna indietro</button>
+    </div>
+  </div>
+</div>
+
+<!-- MERGE SCREEN -->
+<div id="mergeScreen" style="display:none;height:100vh;align-items:center;justify-content:center;background:linear-gradient(135deg,#3b0764 0%,#0f172a 100%);overflow:auto">
+  <div class="upload-zone" style="max-width:780px;width:94vw">
+    <div style="font-size:36px;margin-bottom:12px">🔗</div>
+    <h1>Unisci file Excel</h1>
+    <p>Carica due o più file da unire in un unico Export. Puoi decidere come gestire i conflitti.</p>
+    <!-- Drop zone for multiple files -->
+    <div id="mergeDropZone" style="border:2px dashed #6d28d9;border-radius:12px;padding:28px 20px;margin-bottom:18px;background:#1e1b4b20;cursor:pointer;transition:.2s"
+      ondragover="event.preventDefault();this.style.borderColor='#a78bfa'"
+      ondragleave="this.style.borderColor='#6d28d9'"
+      ondrop="handleMergeDrop(event)">
+      <div style="font-size:28px;margin-bottom:8px">📂</div>
+      <div style="font-size:13px;color:#94a3b8">Trascina qui i file .xlsx oppure clicca per selezionarli</div>
+      <label style="display:inline-flex;align-items:center;gap:8px;margin-top:12px;padding:8px 18px;background:#7c3aed;color:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">
+        📂 Seleziona file
+        <input type="file" accept=".xlsx,.xls" id="mergeFileInput" multiple style="display:none">
+      </label>
+    </div>
+    <!-- File list -->
+    <div id="mergeFileList" style="margin-bottom:16px;display:flex;flex-direction:column;gap:8px"></div>
+    <!-- Actions -->
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <button class="primary-btn" id="startMergeBtn" disabled onclick="startMerge()" style="background:#7c3aed;padding:12px 28px;font-size:15px;border-radius:10px;opacity:.5;cursor:not-allowed">🔗 Avvia unione</button>
+      <button class="primary-btn" onclick="showUploadScreen()" style="background:#475569;padding:12px 28px;font-size:15px;border-radius:10px">← Torna indietro</button>
+    </div>
+  </div>
+</div>
+
+<!-- MERGE CONFLICT MODAL -->
+<div id="mergeConflictOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.85);z-index:8000;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:16px;width:min(960px,96vw);max-height:90vh;display:flex;flex-direction:column;box-shadow:0 30px 60px rgba(0,0,0,.4);overflow:hidden">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid #e2e8f0;flex-shrink:0;flex-wrap:wrap;gap:8px">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:#0f172a">⚠️ Risoluzione conflitti</div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px" id="conflictProgress"></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="resolveAll('first')" style="padding:6px 12px;background:#2563eb;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer">Tieni tutti i primi</button>
+        <button onclick="resolveAll('last')" style="padding:6px 12px;background:#16a34a;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer">Tieni tutti gli ultimi</button>
+        <button onclick="collapseAllSections(true)" style="padding:6px 10px;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:7px;font-size:12px;cursor:pointer" title="Chiudi tutti i gruppi">▶ Chiudi tutti</button>
+        <button onclick="collapseAllSections(false)" style="padding:6px 10px;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:7px;font-size:12px;cursor:pointer" title="Apri tutti i gruppi">▼ Apri tutti</button>
+      </div>
+    </div>
+    <!-- Filter bar -->
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 24px;border-bottom:1px solid #e2e8f0;flex-shrink:0;flex-wrap:wrap;background:#f8fafc">
+      <!-- View filter -->
+      <div style="display:flex;gap:4px;align-items:center">
+        <span style="font-size:11px;font-weight:600;color:#64748b;margin-right:2px">Vista:</span>
+        <button id="mfv-conflicts" onclick="setMergeViewFilter('conflicts')" style="padding:4px 10px;border-radius:6px;border:1px solid #e2e8f0;font-size:11px;font-weight:600;cursor:pointer;background:#7c3aed;color:#fff">Solo conflitti</button>
+        <button id="mfv-all" onclick="setMergeViewFilter('all')" style="padding:4px 10px;border-radius:6px;border:1px solid #e2e8f0;font-size:11px;font-weight:600;cursor:pointer;background:#fff;color:#475569">Tutte le voci</button>
+      </div>
+      <div style="width:1px;height:20px;background:#e2e8f0"></div>
+      <!-- Search by list name -->
+      <input id="mergeSearchList" type="text" placeholder="🔍 Filtra per elenco..." oninput="_mergeConflictPage=0;renderConflictBody()"
+        style="padding:4px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;outline:none;min-width:180px;background:#fff">
+      <div style="display:flex;gap:4px;align-items:center">
+        <span style="font-size:11px;font-weight:600;color:#64748b;margin-right:2px">Lingua:</span>
+        <button id="mfl-all" onclick="setMergeLangFilter('all')" style="padding:4px 10px;border-radius:6px;border:1px solid #e2e8f0;font-size:11px;font-weight:600;cursor:pointer;background:#0f172a;color:#fff">Tutte</button>
+        <button id="mfl-it-IT" onclick="setMergeLangFilter('it-IT')" style="padding:4px 10px;border-radius:6px;border:1px solid #e2e8f0;font-size:11px;font-weight:600;cursor:pointer;background:#fff;color:#2563eb">IT</button>
+        <button id="mfl-en-US" onclick="setMergeLangFilter('en-US')" style="padding:4px 10px;border-radius:6px;border:1px solid #e2e8f0;font-size:11px;font-weight:600;cursor:pointer;background:#fff;color:#dc2626">EN</button>
+        <button id="mfl-en-GB" onclick="setMergeLangFilter('en-GB')" style="padding:4px 10px;border-radius:6px;border:1px solid #e2e8f0;font-size:11px;font-weight:600;cursor:pointer;background:#fff;color:#7c3aed">GB</button>
+        <button id="mfl-de-DE" onclick="setMergeLangFilter('de-DE')" style="padding:4px 10px;border-radius:6px;border:1px solid #e2e8f0;font-size:11px;font-weight:600;cursor:pointer;background:#fff;color:#ca8a04">DE</button>
+      </div>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:20px 24px" id="conflictBody"></div>
+    <div style="padding:14px 24px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
+      <div style="font-size:12px;color:#64748b" id="conflictSummary"></div>
+      <button onclick="confirmMerge()" style="padding:10px 24px;background:#7c3aed;color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer">✅ Conferma e scarica</button>
     </div>
   </div>
 </div>
@@ -921,9 +1017,10 @@ const showLoading=msg=>{document.getElementById('loadingText').textContent=msg||
 const hideLoading=()=>document.getElementById('loadingOverlay').style.display='none';
 const showToast=msg=>{const t=document.getElementById('toast');t.textContent=msg;t.classList.remove('hidden');setTimeout(()=>t.classList.add('hidden'),2400);};
 
-function hideAll(){['uploadScreen','selectionScreen','compareScreen','editorScreen','diffUploadScreen','diffScreen'].forEach(id=>document.getElementById(id).style.display='none');clearSel();}
+function hideAll(){['uploadScreen','selectionScreen','compareScreen','editorScreen','diffUploadScreen','diffScreen','mergeScreen'].forEach(id=>document.getElementById(id).style.display='none');clearSel();}
 function showUploadScreen(){hideAll();document.getElementById('uploadScreen').style.display='flex';}
 function showDiffUploadScreen(){hideAll();document.getElementById('diffUploadScreen').style.display='flex';}
+function showMergeScreen(){hideAll();document.getElementById('mergeScreen').style.display='flex';renderMergeFileList();}
 function showSelectionScreen(){hideAll();document.getElementById('selectionScreen').style.display='flex';renderSelectionList();}
 
 function buildGroups(names){
@@ -965,8 +1062,6 @@ const dropZone=document.getElementById('dropZone');
 ['dragenter','dragover'].forEach(evt=>dropZone.addEventListener(evt,e=>{e.preventDefault();e.stopPropagation();dropZone.classList.add('dragover');}));
 ['dragleave','drop'].forEach(evt=>dropZone.addEventListener(evt,e=>{e.preventDefault();e.stopPropagation();dropZone.classList.remove('dragover');}));
 dropZone.addEventListener('drop',e=>{const file=e.dataTransfer.files[0];if(file) handleFile(file);});
-document.body.addEventListener('dragover',e=>e.preventDefault());
-document.body.addEventListener('drop',e=>{e.preventDefault();const file=e.dataTransfer.files[0];if(file&&file.name.match(/\.xlsx?$/i)) handleFile(file);});
 
 /* ========== DUAL FILE LOAD ========== */
 function handleDiffFile(file,slot){
@@ -1005,6 +1100,7 @@ function handleDiffFile(file,slot){
 }
 document.getElementById('diffInputA').addEventListener('change',function(){handleDiffFile(this.files[0],'A');this.value='';});
 document.getElementById('diffInputB').addEventListener('change',function(){handleDiffFile(this.files[0],'B');this.value='';});
+document.getElementById('mergeFileInput').addEventListener('change',function(){addMergeFiles([...this.files]);this.value='';});
 
 /* ========== DIFF LOGIC ========== */
 function getDiffForList(listName){
@@ -1693,12 +1789,755 @@ function deleteDiffSection(listName){
   showToast('🗑 Sezione "'+listName.replace('Z2000_','')+'" eliminata');
 }
 
+/* ========== MERGE (UNISCI FILE) ========== */
+let _mergeFiles=[]; // [{name, data:{textLists,entries}}]
+let _mergeConflicts=[]; // [{type:'list'|'entry', key, versions:[{fileIdx,fileN,tl|entry}], chosen:idx}]
+
+function handleMergeDrop(ev){
+  ev.preventDefault();
+  ev.currentTarget.style.borderColor='#6d28d9';
+  const files=[...ev.dataTransfer.files].filter(f=>f.name.match(/\.xlsx?$/i));
+  if(files.length) addMergeFiles(files);
+}
+
+function addMergeFiles(files){
+  if(!files.length) return;
+  const arr=[...files];
+  document.getElementById('loadingText').textContent='Caricamento 0/'+arr.length+'...';
+  document.getElementById('loadingOverlay').style.display='flex';
+  function loadNext(i){
+    if(i>=arr.length){hideLoading();renderMergeFileList();return;}
+    const file=arr[i];
+    document.getElementById('loadingText').textContent='Caricamento '+(i+1)+'/'+arr.length+': '+file.name;
+    const r=new FileReader();
+    r.onload=ev=>{
+      try{
+        const data=parseFileData(new Uint8Array(ev.target.result));
+        _mergeFiles.push({name:file.name,data});
+      }catch(e){showToast('❌ '+file.name+': '+e.message);}
+      requestAnimationFrame(()=>loadNext(i+1));
+    };
+    r.readAsArrayBuffer(file);
+  }
+  loadNext(0);
+}
+
+function removeMergeFile(idx){
+  _mergeFiles.splice(idx,1);
+  renderMergeFileList();
+}
+
+function moveMergeFile(idx,dir){
+  const ni=idx+dir;
+  if(ni<0||ni>=_mergeFiles.length) return;
+  [_mergeFiles[idx],_mergeFiles[ni]]=[_mergeFiles[ni],_mergeFiles[idx]];
+  renderMergeFileList();
+}
+
+function renderMergeFileList(){
+  const list=document.getElementById('mergeFileList');
+  const btn=document.getElementById('startMergeBtn');
+  if(!list) return;
+  list.innerHTML='';
+  _mergeFiles.forEach((f,i)=>{
+    const item=document.createElement('div'); item.className='merge-file-item';
+    const tlCount=f.data.textLists.length, eCount=f.data.entries.length;
+    item.innerHTML=`
+      <span style="font-size:18px">📄</span>
+      <span class="mf-name" title="${f.name}">${f.name}</span>
+      <span class="mf-meta">${tlCount} elenchi · ${eCount} voci</span>
+      <button class="mf-del" title="Sposta su" onclick="moveMergeFile(${i},-1)" style="font-size:13px" ${i===0?'disabled':''}>▲</button>
+      <button class="mf-del" title="Sposta giù" onclick="moveMergeFile(${i},1)" style="font-size:13px" ${i===_mergeFiles.length-1?'disabled':''}>▼</button>
+      <button class="mf-del" title="Rimuovi" onclick="removeMergeFile(${i})">✕</button>`;
+    list.appendChild(item);
+  });
+  const ready=_mergeFiles.length>=2;
+  btn.disabled=!ready;
+  btn.style.opacity=ready?'1':'0.5';
+  btn.style.cursor=ready?'pointer':'not-allowed';
+}
+
+let _mergeConflictPage=0;
+const MERGE_CONFLICT_PAGE_SIZE=50;
+let _mergeViewFilter='conflicts';
+let _mergeLangFilter='all';
+
+function setMergeViewFilter(f){
+  _mergeViewFilter=f; _mergeConflictPage=0;
+  ['conflicts','all'].forEach(function(k){
+    const btn=document.getElementById('mfv-'+k);
+    if(btn){btn.style.background=k===f?'#7c3aed':'#fff';btn.style.color=k===f?'#fff':'#475569';btn.style.borderColor=k===f?'#7c3aed':'#e2e8f0';}
+  });
+  renderConflictBody();
+}
+
+function setMergeLangFilter(l){
+  _mergeLangFilter=l; _mergeConflictPage=0;
+  const cols={'all':'#0f172a','it-IT':'#2563eb','en-US':'#dc2626','en-GB':'#7c3aed','de-DE':'#ca8a04'};
+  Object.keys(cols).forEach(function(k){
+    const btn=document.getElementById('mfl-'+k);
+    if(!btn) return;
+    const active=k===l;
+    btn.style.background=active?cols[k]:'#fff';
+    btn.style.color=active?'#fff':cols[k];
+    btn.style.borderColor=active?cols[k]:'#e2e8f0';
+  });
+  renderConflictBody();
+}
+
+let _mergeAllEntries=[];
+function _buildMergeAllEntries(){
+  const entryMap=new Map();
+  const conflictKeys=new Set(_mergeConflicts.filter(function(c){return c.type==='entry';}).map(function(c){return c.key;}));
+  _mergeFiles.forEach(function(f,fi){
+    f.data.entries.forEach(function(e){
+      if(!e||!e.texts) return;
+      const k=e.parent+'||'+e.value;
+      if(!entryMap.has(k)) entryMap.set(k,{key:k,versions:[],isConflict:conflictKeys.has(k)});
+      entryMap.get(k).versions.push({fileIdx:fi,fileN:f.name,entry:e});
+    });
+  });
+  _mergeAllEntries=[...entryMap.values()];
+}
+
+function startMerge(){
+  if(_mergeFiles.length<2){showToast('Carica almeno 2 file');return;}
+  showLoading('Analisi conflitti...');
+  // Use requestAnimationFrame to let the loading overlay paint first
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    _mergeConflicts=detectConflicts();
+    hideLoading();
+    if(_mergeConflicts.length===0){
+      const merged=buildMerged();
+      exportMergedFile(merged);
+    } else {
+      _mergeConflictPage=0;
+      openConflictModal();
+    }
+  }));
+}
+
+function detectConflicts(){
+  const conflicts=[];
+  const tlMap=new Map();
+  const entryMap=new Map();
+
+  _mergeFiles.forEach((f,fi)=>{
+    f.data.textLists.forEach(tl=>{
+      if(!tlMap.has(tl.name)) tlMap.set(tl.name,[]);
+      tlMap.get(tl.name).push({fileIdx:fi, fileN:f.name, tl});
+    });
+    f.data.entries.forEach(e=>{
+      const k=e.parent+'||'+e.value;
+      if(!entryMap.has(k)) entryMap.set(k,[]);
+      entryMap.get(k).push({fileIdx:fi, fileN:f.name, entry:e});
+    });
+  });
+
+  // TextList conflicts: same name, different content in ANY pair of files
+  tlMap.forEach((versions,name)=>{
+    if(versions.length<2) return;
+    // N-way: check if all versions are identical
+    const first=versions[0].tl;
+    const different=versions.some(v=>
+      v.tl.listRange!==first.listRange||
+      LANGS.some(l=>(v.tl.comments[l]||'')!==(first.comments[l]||''))
+    );
+    if(different) conflicts.push({type:'list', key:name, versions, chosen:versions.length-1});
+  });
+
+  // Entry conflicts — TWO cases:
+  // 1. Same key in multiple files but with different texts
+  // 2. Key present in some files but not all (missing entries)
+  const totalFiles=_mergeFiles.length;
+
+  entryMap.forEach((versions,k)=>{
+    // Case 1: present in multiple files with different texts
+    if(versions.length>=2){
+      const first=versions[0].entry;
+      if(!first||!first.texts) return;
+      // N-way: any version different from any other
+      const allTexts=versions.map(v=>LANGS.map(l=>v.entry&&v.entry.texts?v.entry.texts[l]||'':'').join('|'));
+      const different=allTexts.some(t=>t!==allTexts[0]);
+      if(different){
+        conflicts.push({type:'entry', key:k, versions, chosen:versions.length-1});
+        return;
+      }
+    }
+    // Case 2: present in fewer files than total (missing in some)
+    if(versions.length<totalFiles){
+      // Build full versions array including placeholders for missing files
+      const fullVersions=_mergeFiles.map((f,fi)=>{
+        const found=versions.find(v=>v.fileIdx===fi);
+        return found||{fileIdx:fi, fileN:f.name, entry:null}; // null = missing
+      });
+      const hasSome=fullVersions.some(v=>v.entry!==null);
+      if(hasSome){
+        conflicts.push({type:'entry', key:k, versions:fullVersions, chosen:versions.length-1, hasMissing:true});
+      }
+    }
+  });
+
+  return conflicts;
+}
+
+function openConflictModal(){
+  _buildMergeAllEntries();
+  _mergeConflictPage=0;
+  document.getElementById('mergeConflictOverlay').style.display='flex';
+  // triggers renderConflictBody via setMergeViewFilter
+  setMergeViewFilter('conflicts');
+  setMergeLangFilter('all');
+}
+
+function renderConflictBody(){
+  const body=document.getElementById('conflictBody');
+  const progress=document.getElementById('conflictProgress');
+  const summary=document.getElementById('conflictSummary');
+  const listConf=_mergeConflicts.filter(c=>c.type==='list').length;
+  const entryConf=_mergeConflicts.filter(c=>c.type==='entry').length;
+  const totalConflicts=_mergeConflicts.length;
+  progress.textContent=totalConflicts+' conflitti: '+listConf+' elenchi, '+entryConf+' voci';
+  body.innerHTML='';
+
+  // Build all entries map: parent -> [{key, versions[], isConflict, conf?}]
+  const conflictEntryMap=new Map(); // key -> conflict obj
+  _mergeConflicts.filter(c=>c.type==='entry').forEach(c=>conflictEntryMap.set(c.key,c));
+
+  // Collect all list names across all files
+  const allListNames=new Set();
+  _mergeFiles.forEach(f=>f.data.textLists.forEach(tl=>allListNames.add(tl.name)));
+  // Add list names from conflicts (in case of missing TLs)
+  _mergeConflicts.filter(c=>c.type==='list').forEach(c=>allListNames.add(c.key));
+
+  // Apply search filter
+  const searchQ=(document.getElementById('mergeSearchList')?.value||'').toLowerCase().trim();
+
+  // Group list names using buildGroups
+  const filteredNames=[...allListNames].filter(n=>!searchQ||n.toLowerCase().includes(searchQ));
+  const groups=buildGroups(filteredNames);
+
+  // Build entry map per list: listName -> [{key, value, versions[], isConflict, conf?}]
+  const listEntryMap=new Map(); // listName -> Map(value -> {key,versions[],isConflict,conf?})
+  _mergeFiles.forEach((f,fi)=>{
+    f.data.entries.forEach(e=>{
+      if(!e||!e.texts) return;
+      const listName=e.parent;
+      if(!listEntryMap.has(listName)) listEntryMap.set(listName,new Map());
+      const valMap=listEntryMap.get(listName);
+      if(!valMap.has(e.value)) valMap.set(e.value,{key:e.parent+'||'+e.value, value:e.value, versions:_mergeFiles.map((_,i)=>({fileIdx:i,fileN:_mergeFiles[i].name,entry:null}))});
+      valMap.get(e.value).versions[fi]={fileIdx:fi,fileN:f.name,entry:e};
+    });
+  });
+  // Also add missing-only conflicts (entries not in any file's listEntryMap but in conflicts)
+  _mergeConflicts.filter(c=>c.type==='entry').forEach(c=>{
+    const firstValid=c.versions.find(v=>v.entry!==null);
+    if(!firstValid) return;
+    const listName=firstValid.entry.parent;
+    const val=firstValid.entry.value;
+    if(!listEntryMap.has(listName)) listEntryMap.set(listName,new Map());
+    const valMap=listEntryMap.get(listName);
+    if(!valMap.has(val)) valMap.set(val,{key:c.key,value:val,versions:c.versions});
+  });
+
+  const fileCount=_mergeFiles.length;
+  const langFilter=_mergeLangFilter;
+  const langsToShow=langFilter==='all'?LANGS:[langFilter];
+
+  // Render each group
+  Object.keys(groups).forEach(gk=>{
+    const listNames=groups[gk];
+
+    // Collect all values across lists in this group
+    const allValMap=new Map(); // value -> merged entry info
+    listNames.forEach(listName=>{
+      const vm=listEntryMap.get(listName);
+      if(!vm) return;
+      vm.forEach((info,val)=>{
+        if(!allValMap.has(val)) allValMap.set(val,{key:info.key,value:val,versions:info.versions});
+      });
+    });
+
+    if(allValMap.size===0) return;
+
+    // Apply view filter
+    let entries=[...allValMap.values()];
+
+    // Count conflicts in group
+    const groupConflicts=entries.filter(e=>{
+      if(conflictEntryMap.has(e.key)) return true;
+      // missing in some files = conflict
+      return e.versions.some(v=>v.entry===null)&&e.versions.some(v=>v.entry!==null);
+    }).length;
+
+    if(_mergeViewFilter==='conflicts'&&groupConflicts===0) return;
+
+    // Filter to only conflicts if needed
+    if(_mergeViewFilter==='conflicts'){
+      entries=entries.filter(e=>{
+        if(conflictEntryMap.has(e.key)) return true;
+        return e.versions.some(v=>v.entry===null)&&e.versions.some(v=>v.entry!==null);
+      });
+    }
+
+    // Apply language filter
+    if(langFilter!=='all'){
+      entries=entries.filter(e=>{
+        const texts=e.versions.map(v=>v.entry&&v.entry.texts?v.entry.texts[langFilter]||'':'');
+        return texts.some(t=>t!=='');
+      });
+    }
+
+    if(entries.length===0) return;
+
+    // Sort entries by numeric value
+    entries.sort((a,b)=>{const na=Number(a.value),nb=Number(b.value);return (!isNaN(na)&&!isNaN(nb))?(na-nb):a.value.localeCompare(b.value);});
+
+    // Section header with collapse button
+    const secHdr=document.createElement('div');
+    secHdr.style.cssText='padding:7px 14px;background:#f1f5f9;border-bottom:1px solid #e2e8f0;border-top:2px solid #cbd5e1;font-size:12px;font-weight:700;color:#334155;margin-top:8px;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none';
+    const badge=groupConflicts>0?
+      '<span style="background:#fee2e2;color:#dc2626;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">'+groupConflicts+' diff</span>':
+      '<span style="background:#dcfce7;color:#16a34a;padding:1px 6px;border-radius:4px;font-size:10px">✓ uguale</span>';
+    // Auto-collapse identical groups when view is "all"
+    const startCollapsed=(_mergeViewFilter==='all'&&groupConflicts===0);
+    const arrow=document.createElement('span');
+    arrow.textContent=startCollapsed?'▶':'▼';
+    arrow.style.cssText='font-size:10px;color:#94a3b8;flex-shrink:0;transition:transform .15s';
+    secHdr.appendChild(arrow);
+    const titleSpan=document.createElement('span');
+    titleSpan.innerHTML=gk.replace('Z2000_','').replace('Z1000_','')+badge+'<span style="font-weight:400;color:#64748b;font-size:11px;margin-left:4px">'+entries.length+' voci</span>';
+    secHdr.appendChild(titleSpan);
+    // Collapse all / expand all buttons
+    const actSpan=document.createElement('span');
+    actSpan.style.cssText='margin-left:auto;display:flex;gap:4px';
+    body.appendChild(secHdr);
+
+    // Collapsible container
+    const tableWrap=document.createElement('div');
+    tableWrap.style.cssText='overflow:hidden;transition:max-height .2s ease';
+    tableWrap.style.maxHeight=startCollapsed?'0':'9999px';
+    // Build table: rows = values, columns = files, sub-rows per lang
+    const table=document.createElement('table');
+    table.style.cssText='width:100%;border-collapse:collapse;margin-bottom:2px';
+
+    // Header: VALORE | file1 | file2 | ... | fileN
+    const thead=document.createElement('thead');
+    const trh=document.createElement('tr');
+    const thVal=document.createElement('th');
+    thVal.style.cssText='padding:5px 8px;font-size:10px;font-weight:700;color:#64748b;text-align:left;border-bottom:2px solid #e2e8f0;background:#f8fafc;width:70px;white-space:nowrap';
+    thVal.textContent='VALORE';
+    trh.appendChild(thVal);
+    // Quick resolve buttons header
+    const thActions=document.createElement('th');
+    thActions.style.cssText='padding:5px 4px;font-size:10px;font-weight:700;color:#64748b;text-align:center;border-bottom:2px solid #e2e8f0;background:#f8fafc;width:50px';
+    thActions.textContent='';
+    trh.appendChild(thActions);
+    _mergeFiles.forEach((f,fi)=>{
+      const th=document.createElement('th');
+      th.style.cssText='padding:5px 8px;font-size:10px;font-weight:600;color:#334155;text-align:left;border-bottom:2px solid #e2e8f0;background:#f8fafc;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+      th.title=f.name;
+      const shortName=f.name.replace(/\.xlsx?$/i,'').replace(/HMITextLists/i,'').replace(/Export/i,'');
+      th.textContent=shortName||f.name;
+      trh.appendChild(th);
+    });
+    // Custom text column header
+    const thCust=document.createElement('th');
+    thCust.style.cssText='padding:5px 4px;font-size:10px;font-weight:700;color:#7c3aed;text-align:center;border-bottom:2px solid #e2e8f0;background:#f8fafc;width:32px';
+    thCust.textContent='✏';
+    thCust.title='Scrivi testo personalizzato';
+    trh.appendChild(thCust);
+    thead.appendChild(trh); table.appendChild(thead);
+
+    const tbody=document.createElement('tbody');
+    entries.forEach((entryInfo,rowIdx)=>{
+      const val=entryInfo.value;
+      const versions=entryInfo.versions; // array of length fileCount
+      const conf=conflictEntryMap.get(entryInfo.key);
+      const isMissingConflict=!conf&&versions.some(v=>v.entry===null)&&versions.some(v=>v.entry!==null);
+      const isConflict=!!conf||isMissingConflict;
+
+      // Init chosenLangs if needed
+      if(conf&&!conf.chosenLangs){
+        conf.chosenLangs={};
+        LANGS.forEach(l=>{conf.chosenLangs[l]=versions.length-1;});
+      }
+      if(conf&&!conf.customTexts) conf.customTexts={};
+
+      // One row per language
+      langsToShow.forEach((lang,li)=>{
+        const langTexts=versions.map(v=>v.entry&&v.entry.texts?v.entry.texts[lang]||'':'');
+        const allSame=langTexts.every(t=>t===langTexts[0]);
+        const hasAny=langTexts.some(t=>t!=='');
+
+        // Skip if filtering by conflict and this lang row is identical
+        if(_mergeViewFilter==='conflicts'&&allSame&&!isMissingConflict) return;
+        if(!hasAny&&!versions.some(v=>v.entry===null&&versions.some(v2=>v2.entry!==null))) return;
+
+        const tr=document.createElement('tr');
+        const isDiff=!allSame||isMissingConflict;
+        if(isDiff) tr.style.background='#fffbeb';
+
+        // Value cell (only on first lang row)
+        const tdVal=document.createElement('td');
+        tdVal.style.cssText='padding:4px 8px;font-size:11px;font-weight:600;color:#475569;border-bottom:1px solid #f1f5f9;vertical-align:top;white-space:nowrap';
+        if(li===0){
+          tdVal.textContent=val;
+          if(isConflict){
+            const dot=document.createElement('span');
+            dot.style.cssText='display:inline-block;width:6px;height:6px;border-radius:50%;background:#dc2626;margin-left:4px;vertical-align:middle';
+            tdVal.appendChild(dot);
+          }
+        }
+        tr.appendChild(tdVal);
+
+        // Actions cell (resolve all for this row on first lang)
+        const tdAct=document.createElement('td');
+        tdAct.style.cssText='padding:2px 4px;text-align:center;border-bottom:1px solid #f1f5f9;vertical-align:top;white-space:nowrap';
+        if(li===0&&conf&&isDiff){
+          // Language label
+          const langLbl=document.createElement('span');
+          langLbl.style.cssText='font-size:9px;font-weight:700;color:'+LANG_COLORS[lang];
+          langLbl.textContent=LANG_LABELS[lang];
+          tdAct.appendChild(langLbl);
+        } else if(li>0&&conf){
+          const langLbl=document.createElement('span');
+          langLbl.style.cssText='font-size:9px;font-weight:700;color:'+LANG_COLORS[lang];
+          langLbl.textContent=LANG_LABELS[lang];
+          tdAct.appendChild(langLbl);
+        }
+        tr.appendChild(tdAct);
+
+        // One cell per file
+        const fileTds=[];
+        versions.forEach((v,vi)=>{
+          const td=document.createElement('td');
+          td.style.cssText='padding:3px 8px;font-size:12px;border-bottom:1px solid #f1f5f9;vertical-align:top;font-family:monospace;max-width:200px';
+          const txt=v.entry&&v.entry.texts?v.entry.texts[lang]||'':'';
+          const isMissing=v.entry===null;
+
+          if(!conf){
+            // No conflict: read-only display
+            if(isMissing){
+              td.innerHTML='<span style="color:#e2e8f0;font-size:11px">—</span>';
+            } else {
+              td.textContent=txt;
+              if(allSame) td.style.color='#64748b';
+            }
+          } else {
+            // Conflict: ALL cells are clickable (including missing = choose empty/absent)
+            const isChosen=conf.chosenLangs[lang]===vi;
+            const isCustom=conf.chosenLangs[lang]===-1;
+            td.style.cursor='pointer';
+            td.style.borderRadius='4px';
+            if(isChosen) td.style.background='#dbeafe';
+            else if(isMissing) td.style.background='#fff7ed';
+            else if(isDiff&&!isCustom){
+              if(txt!==langTexts[Math.max(0,conf.chosenLangs[lang]??0)]) td.style.background='#fef2f2';
+            }
+            if(isMissing){
+              td.innerHTML='<span style="color:#f97316;font-style:italic;font-size:11px">— assente</span>';
+              td.title='Clic per scegliere: voce assente in questo file';
+            } else {
+              td.textContent=txt||'—';
+              td.title='Clic per scegliere questo testo per '+LANG_LABELS[lang];
+            }
+            td._langVi={lang,vi,conf};
+            fileTds.push(td);
+          }
+          tr.appendChild(td);
+        });
+
+        // Custom text cell — show for ALL conflict rows (including missing-only conflicts)
+        if(conf&&(isDiff||isMissingConflict)){
+          const tdCust=document.createElement('td');
+          const isCustom=conf.chosenLangs[lang]===-1;
+          tdCust.style.cssText='padding:2px 6px;border-bottom:1px solid #f1f5f9;vertical-align:top;width:32px';
+          const custBtn=document.createElement('button');
+          custBtn.title='Scrivi testo personalizzato per '+LANG_LABELS[lang];
+          custBtn.style.cssText='border:1px solid '+(isCustom?'#7c3aed':'#e2e8f0')+';background:'+(isCustom?'#ede9fe':'#f8fafc')+';color:'+(isCustom?'#7c3aed':'#94a3b8')+';border-radius:4px;padding:2px 5px;font-size:11px;cursor:pointer;white-space:nowrap';
+          custBtn.textContent='✏';
+          custBtn.onclick=(function(lg,entConf,trow,tbl){return function(e){
+            e.stopPropagation();
+            // Toggle custom row
+            const existingRow=tbl.querySelector('.custom-row-'+lg.replace('-','_'));
+            if(existingRow){
+              existingRow.remove();
+              if(entConf.chosenLangs[lg]===-1){
+                entConf.chosenLangs[lg]=entConf.versions.length-1;
+                delete entConf.customTexts[lg];
+              }
+              custBtn.style.background='#f8fafc'; custBtn.style.color='#94a3b8'; custBtn.style.borderColor='#e2e8f0';
+              return;
+            }
+            // Create custom text row
+            entConf.chosenLangs[lg]=-1;
+            if(!entConf.customTexts[lg]) entConf.customTexts[lg]='';
+            custBtn.style.background='#ede9fe'; custBtn.style.color='#7c3aed'; custBtn.style.borderColor='#7c3aed';
+            // Deselect file cells
+            fileTds.forEach(t=>{t.style.background='';});
+            const custRow=document.createElement('tr');
+            custRow.className='custom-row-'+lg.replace('-','_');
+            custRow.style.background='#f5f3ff';
+            const tdSpan=document.createElement('td');
+            tdSpan.colSpan=2+entConf.versions.length+1;
+            tdSpan.style.cssText='padding:6px 10px;border-bottom:1px solid #e2e8f0';
+            tdSpan.innerHTML='<span style="font-size:10px;font-weight:700;color:'+LANG_COLORS[lg]+'">'+LANG_LABELS[lg]+'</span><span style="font-size:10px;color:#7c3aed;margin-left:6px">Testo personalizzato:</span>';
+            const ta=document.createElement('textarea');
+            ta.style.cssText='display:block;width:100%;margin-top:4px;padding:6px 10px;border:2px solid #7c3aed;border-radius:6px;font-size:13px;font-family:monospace;resize:vertical;min-height:38px;outline:none;box-sizing:border-box';
+            ta.placeholder='Scrivi il testo personalizzato per '+LANG_LABELS[lg]+'...';
+            ta.value=entConf.customTexts[lg];
+            ta.oninput=(function(l2){return function(){entConf.customTexts[l2]=this.value;};})(lg);
+            tdSpan.appendChild(ta);
+            custRow.appendChild(tdSpan);
+            // Insert after current row
+            trow.parentNode.insertBefore(custRow, trow.nextSibling);
+            setTimeout(()=>ta.focus(),0);
+          };})(lang,conf,tr,tbody);
+          tdCust.appendChild(custBtn);
+          tr.appendChild(tdCust);
+        }
+
+        // Wire up click handlers now that fileTds is complete
+        fileTds.forEach((td,vi)=>{
+          const lv=td._langVi;
+          if(!lv) return;
+          td.onclick=(function(lg,idx,entConf,allTds){return function(){
+            entConf.chosenLangs[lg]=idx;
+            delete entConf.customTexts[lg];
+            allTds.forEach(function(t){t.style.background='';});
+            td.style.background='#dbeafe';
+            // Remove custom row if open
+            const custRow=tbody.querySelector('.custom-row-'+lg.replace('-','_'));
+            if(custRow) custRow.remove();
+          };})(lv.lang,vi,lv.conf,fileTds);
+        });
+
+        tbody.appendChild(tr);
+      });
+    });
+    table.appendChild(tbody);
+    tableWrap.appendChild(table);
+    body.appendChild(tableWrap);
+    // Wire up collapse click
+    secHdr.onclick=function(){
+      const collapsed=tableWrap.style.maxHeight==='0px'||tableWrap.style.maxHeight==='0';
+      tableWrap.style.maxHeight=collapsed?'9999px':'0';
+      arrow.textContent=collapsed?'▼':'▶';
+    };
+  });
+
+  // Show list conflicts separately at the top if any
+  const listConflicts=_mergeConflicts.filter(c=>c.type==='list');
+  if(listConflicts.length>0){
+    const lHdr=document.createElement('div');
+    lHdr.style.cssText='padding:7px 14px;background:#fef9c3;border-bottom:1px solid #e2e8f0;font-size:12px;font-weight:700;color:#713f12;margin-bottom:4px';
+    lHdr.textContent='⚠️ Conflitti su elenchi ('+listConflicts.length+')';
+    body.insertBefore(lHdr,body.firstChild);
+  }
+
+  if(body.children.length===0||body.innerHTML.trim()===''){
+    body.innerHTML='<div style="padding:40px;text-align:center;color:#94a3b8;font-size:13px">Nessuna voce corrisponde ai filtri selezionati.</div>';
+  }
+
+  const langLabel=_mergeLangFilter!=='all'?(' · lingua: '+LANG_LABELS[_mergeLangFilter]):'';
+  const viewLabel=_mergeViewFilter==='all'?'Tutte le voci':'Solo conflitti';
+  summary.textContent=viewLabel+langLabel+(searchQ?' · ricerca: "'+searchQ+'"':'');
+}
+
+
+function collapseAllSections(collapse){
+  const body=document.getElementById('conflictBody');
+  if(!body) return;
+  // Find all tableWrap divs (direct children that are divs with overflow:hidden)
+  [...body.children].forEach(el=>{
+    if(el.tagName==='DIV'&&el.style.overflow==='hidden'){
+      el.style.maxHeight=collapse?'0':'9999px';
+    }
+    // Update arrows in headers
+    if(el.tagName==='DIV'&&el.style.cursor==='pointer'){
+      const arrow=el.querySelector('span');
+      if(arrow) arrow.textContent=collapse?'▶':'▼';
+    }
+  });
+}
+
+function resolveAll(strategy){
+  _mergeConflicts.forEach(function(c){
+    const idx=strategy==='first'?0:c.versions.length-1;
+    if(c.type==='list'){
+      c.chosen=idx;
+    } else {
+      if(!c.chosenLangs) c.chosenLangs={};
+      if(!c.customTexts) c.customTexts={};
+      LANGS.forEach(function(l){
+        c.chosenLangs[l]=idx;
+        delete c.customTexts[l]; // clear any custom text
+      });
+    }
+  });
+  renderConflictBody();
+  showToast(strategy==='first'?'✅ Tutti i primi file selezionati':'✅ Tutti gli ultimi file selezionati');
+}
+
+
+function confirmMerge(){
+  document.getElementById('mergeConflictOverlay').style.display='none';
+  showLoading('Creazione file unito...');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    const merged=buildMerged();
+    exportMergedFile(merged);
+  }));
+}
+
+function buildMerged(){
+  const chosenTl=new Map();
+  // For entry conflicts: key → {lang: entry} map built from chosenLangs
+  const chosenEntryLangs=new Map(); // key → {lang: entry object}
+
+  _mergeConflicts.forEach(c=>{
+    if(c.type==='list'){
+      const v=c.versions[c.chosen];
+      if(v&&v.tl) chosenTl.set(c.key, v.tl);
+    } else {
+      // Per-language: build a merged texts object from chosenLangs / customTexts
+      const langMap=c.chosenLangs||{};
+      const customTexts=c.customTexts||{};
+      const resolved={};
+      LANGS.forEach(lang=>{
+        const fi=langMap[lang]??c.versions.length-1;
+        if(fi===-1){
+          resolved[lang]=customTexts[lang]||'';
+        } else {
+          const v=c.versions[fi];
+          // v.entry may be null if that file doesn't have this entry
+          resolved[lang]=(v&&v.entry&&v.entry.texts?v.entry.texts[lang]||'':'');
+        }
+      });
+      // Use the base entry from first non-null version
+      const base=(c.versions.find(v=>v.entry!==null))?.entry;
+      if(base){
+        chosenEntryLangs.set(c.key, {...base, texts:{...resolved}});
+      }
+    }
+  });
+
+  const mergedTls=[];
+  const mergedEntries=[];
+  const seenTl=new Set();
+  const seenEntry=new Set();
+
+  // First: add chosen conflict resolutions
+  chosenTl.forEach((tl,name)=>{
+    if(!seenTl.has(name)){
+      mergedTls.push({...tl, comments:{...(tl.comments||{})}});
+      seenTl.add(name);
+    }
+  });
+  chosenEntryLangs.forEach((e,k)=>{
+    if(!seenEntry.has(k)&&e&&e.texts){
+      mergedEntries.push({...e, texts:{...e.texts}});
+      seenEntry.add(k);
+    }
+  });
+
+  // Second: add all non-conflicting items from each file in order
+  _mergeFiles.forEach(f=>{
+    f.data.textLists.forEach(tl=>{
+      if(seenTl.has(tl.name)) return;
+      mergedTls.push({...tl, comments:{...(tl.comments||{})}});
+      seenTl.add(tl.name);
+    });
+    f.data.entries.forEach(e=>{
+      if(!e||!e.texts) return;
+      const k=e.parent+'||'+e.value;
+      if(seenEntry.has(k)) return;
+      mergedEntries.push({...e, texts:{...e.texts}});
+      seenEntry.add(k);
+    });
+  });
+
+  return {textLists:mergedTls, entries:mergedEntries};
+}
+
+function exportMergedFile(data){
+  showLoading('Esportazione...');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    try{
+      const wb=XLSX.utils.book_new();
+      const tlRows=data.textLists.map(tl=>({
+        'Name':tl.name,
+        'ListRange':tl.listRange||'',
+        'Comment [it-IT]':cleanCr((tl.comments||{})['it-IT'])||'<No value>',
+        'Comment [en-US]':cleanCr((tl.comments||{})['en-US'])||'<No value>',
+        'Comment [en-GB]':cleanCr((tl.comments||{})['en-GB'])||'<No value>',
+        'Comment [de-DE]':cleanCr((tl.comments||{})['de-DE'])||'<No value>'
+      }));
+      const eRows=data.entries.map(e=>{
+        if(!e) return null;
+        const t=e.texts||{};
+        let val=e.value; const num=Number(val); if(!isNaN(num)&&String(val).trim()!=='') val=num;
+        return{
+          'Name':e.name||'',
+          'Parent':e.parent||'',
+          'DefaultEntry':e.defaultEntry||'False',
+          'Value':val,
+          'Text [it-IT]':cleanCr(t['it-IT'])||'<No value>',
+          'Text [en-US]':cleanCr(t['en-US'])||'<No value>',
+          'Text [en-GB]':cleanCr(t['en-GB'])||'<No value>',
+          'Text [de-DE]':cleanCr(t['de-DE'])||'<No value>',
+          'FieldInfos':e.fieldInfos||''
+        };
+      }).filter(Boolean);
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(tlRows),'TextList');
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(eRows),'TextListEntry');
+      const now=new Date();
+      const ts=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+'_'+String(now.getHours()).padStart(2,'0')+String(now.getMinutes()).padStart(2,'0');
+      const vp=projectVersion?'_'+projectVersion.replace(/[^a-zA-Z0-9.\-]/g,''):'';
+      const fileName='Export_merged'+vp+'_'+ts+'.xlsx';
+      XLSX.writeFile(wb,fileName);
+      hideLoading();
+      showToast('✅ '+fileName+' — '+data.textLists.length+' elenchi, '+data.entries.length+' voci');
+    }catch(err){
+      hideLoading();
+      showToast('❌ Errore esportazione: '+err.message);
+      console.error('exportMergedFile error:',err);
+    }
+  }));
+}
+
 /* ========== HELP MODAL ========== */
-const APP_VERSION='3.3';
+const APP_VERSION='5.5';
 const CHANGELOG=[
-  {ver:'3.3',date:'2026-05-19',cur:true,items:[
+  {ver:'5.5',date:'2026-05-19',cur:true,items:[
     'Aggiunto controllo automatico aggiornamenti dalla repo GitHub',
     'Download diretto nuova versione dal banner di update',
+    'Aggiornamento repo con tutte le modifiche del collega (v3.7 → v5.5)',
+  ]},
+  {ver:'3.7',date:'2026-04-14',cur:false,items:[
+    'Fix: SyntaxError apostrofo non escaped nel changelog (l\'interfaccia)',
+  ]},
+  {ver:'3.6',date:'2026-04-14',cur:false,items:[
+    'Performance: caricamento file sequenziale con barra progresso (es. 1/5, 2/5...)',
+    'Performance: esportazione XLSX in Web Worker — non blocca mai l\'interfaccia',
+    'Performance: fallback automatico al thread principale se Worker non disponibile',
+  ]},
+  {ver:'3.5',date:'2026-04-14',cur:false,items:[
+    'Fix: Unisci file molto più veloce — overlay rendering con requestAnimationFrame',
+    'Fix: modale conflitti non blocca il browser — paginata a 50 conflitti per pagina',
+    'Fix: confirmMerge mostra loading overlay prima di bloccare il thread con XLSX',
+  ]},
+  {ver:'3.4',date:'2026-04-14',cur:false,items:[
+    'Fix: SyntaxError — apostrofo non escaped nel changelog spezzava tutto il JS',
+    'Fix: showMergeScreen is not defined risolto (era conseguenza del SyntaxError)',
+  ]},
+  {ver:'3.3',date:'2026-04-14',cur:false,items:[
+    'Nuovo: funzione Unisci file — carica N file e crea un Export unificato',
+    'Rilevamento automatico conflitti (elenchi e voci duplicate tra file diversi)',
+    'Interfaccia di risoluzione conflitti: scegli quale versione tenere per ogni conflitto',
+    'Pulsanti Tieni tutti i primi / Tieni tutti gli ultimi per risoluzione rapida',
+    'Esportazione diretta del file unito come .xlsx con timestamp',
+    'I file possono essere riordinati (▲▼) prima dell\'unione',
   ]},
   {ver:'3.2',date:'2026-04-14',cur:false,items:[
     'Fix: Ctrl+Shift nel confronto seleziona solo la stessa lingua dello stesso slot',
@@ -1859,173 +2698,201 @@ const MANUAL_HTML=`
   <li><a href="#s1" onclick="document.getElementById('s1').scrollIntoView({behavior:'smooth'})" style="color:#2563eb;text-decoration:none">Schermata iniziale e versione progetto</a></li>
   <li><a href="#s2" onclick="document.getElementById('s2').scrollIntoView({behavior:'smooth'})" style="color:#2563eb;text-decoration:none">Strumento 1 — Carica Export (editor singolo file)</a></li>
   <li><a href="#s3" onclick="document.getElementById('s3').scrollIntoView({behavior:'smooth'})" style="color:#2563eb;text-decoration:none">Strumento 2 — Confronta due file</a></li>
-  <li><a href="#s4" onclick="document.getElementById('s4').scrollIntoView({behavior:'smooth'})" style="color:#2563eb;text-decoration:none">Selezione multi-cella stile Excel</a></li>
-  <li><a href="#s5" onclick="document.getElementById('s5').scrollIntoView({behavior:'smooth'})" style="color:#2563eb;text-decoration:none">Annulla modifiche (Undo) e Ripristina tutto</a></li>
-  <li><a href="#s6" onclick="document.getElementById('s6').scrollIntoView({behavior:'smooth'})" style="color:#2563eb;text-decoration:none">Esportazione file</a></li>
-  <li><a href="#s7" onclick="document.getElementById('s7').scrollIntoView({behavior:'smooth'})" style="color:#2563eb;text-decoration:none">Riepilogo tasti rapidi</a></li>
+  <li><a href="#s4" onclick="document.getElementById('s4').scrollIntoView({behavior:'smooth'})" style="color:#2563eb;text-decoration:none">Strumento 3 — Unisci file</a></li>
+  <li><a href="#s5" onclick="document.getElementById('s5').scrollIntoView({behavior:'smooth'})" style="color:#2563eb;text-decoration:none">Selezione multi-cella stile Excel</a></li>
+  <li><a href="#s6" onclick="document.getElementById('s6').scrollIntoView({behavior:'smooth'})" style="color:#2563eb;text-decoration:none">Annulla modifiche (Undo) e Ripristina tutto</a></li>
+  <li><a href="#s7" onclick="document.getElementById('s7').scrollIntoView({behavior:'smooth'})" style="color:#2563eb;text-decoration:none">Esportazione file</a></li>
+  <li><a href="#s8" onclick="document.getElementById('s8').scrollIntoView({behavior:'smooth'})" style="color:#2563eb;text-decoration:none">Riepilogo tasti rapidi</a></li>
 </ol>
 
 <hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0">
 
 <h3 id="s1">🏠 1 — Schermata iniziale e versione progetto</h3>
-<p>All'apertura del programma viene mostrata la schermata iniziale con due pulsanti principali:</p>
+<p>All'apertura del programma vengono mostrati tre pulsanti principali:</p>
 <ul>
-  <li><strong>📂 Carica Export.xlsx</strong> — per aprire e modificare un singolo file Excel esportato dal TIA Portal.</li>
-  <li><strong>🔀 Confronta due file</strong> — per caricare due file Excel e vedere le differenze tra di loro affiancate.</li>
+  <li><strong>📂 Carica Export.xlsx</strong> — apre e modifica un singolo file Excel esportato dal TIA Portal.</li>
+  <li><strong>🔀 Confronta due file</strong> — carica due file Excel e mostra le differenze affiancate.</li>
+  <li><strong>🔗 Unisci file</strong> — carica due o più file Excel e crea un unico file unificato.</li>
 </ul>
-<p style="margin-top:8px"><strong>🏷 Versione progetto</strong> — il campo di testo nella schermata iniziale (es. <span class="kbd">v1.2.3</span>) serve a identificare la revisione del progetto su cui si sta lavorando. È facoltativo ma consigliato: viene mostrato nella barra in alto di tutte le schermate e viene aggiunto automaticamente al nome di ogni file esportato, permettendo di riconoscere subito quale revisione è stata salvata.</p>
-<div class="tip">Inserisci la versione progetto prima di caricare il file. Puoi cambiarla in qualsiasi momento nella schermata iniziale.</div>
+<p style="margin-top:8px"><strong>🏷 Versione progetto</strong> — il campo di testo (es. <span class="kbd">v1.2.3</span>) identifica la revisione su cui si lavora. Viene mostrato nella topbar e aggiunto al nome di ogni file esportato.</p>
+<div class="tip">Inserisci la versione progetto prima di caricare il file. Puoi cambiarla in qualsiasi momento dalla schermata iniziale.</div>
 
 <hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0">
 
 <h3 id="s2">📂 2 — Strumento 1: Carica Export (editor singolo file)</h3>
 
-<p><strong>Passo 1 — Caricamento.</strong> Clicca il pulsante <em>📂 Carica Export.xlsx</em> e seleziona il file Excel esportato dal TIA Portal. In alternativa puoi trascinare il file direttamente nella schermata. Il file deve contenere i fogli <em>TextList</em> e <em>TextListEntry</em>.</p>
+<p><strong>Passo 1 — Caricamento.</strong> Clicca <em>📂 Carica Export.xlsx</em> e seleziona il file Excel esportato dal TIA Portal, oppure trascinalo nella schermata. Il file deve contenere i fogli <em>TextList</em> e <em>TextListEntry</em>.</p>
 
-<p style="margin-top:8px"><strong>Passo 2 — Selezione elenchi.</strong> Dopo il caricamento appare una schermata che elenca tutti gli elenchi di testo presenti nel file. Puoi selezionare quelli che ti interessano e filtrare con la casella di ricerca. Clicca <em>Apri editor gruppi</em> per procedere.</p>
+<p style="margin-top:8px"><strong>Passo 2 — Selezione elenchi.</strong> Scegli quali elenchi aprire, filtra con la casella di ricerca, poi clicca <em>Apri editor gruppi</em>.</p>
 
-<p style="margin-top:8px"><strong>Passo 3 — Editor gruppi.</strong> L'interfaccia principale si divide in:</p>
+<p style="margin-top:8px"><strong>Passo 3 — Editor gruppi.</strong> L'interfaccia è divisa in:</p>
 <ul>
-  <li><strong>Barra laterale sinistra</strong> — mostra i gruppi di elenchi. Clicca un gruppo per aprirlo. I gruppi multipli (stessa base con suffisso _1, _2…) vengono mostrati affiancati nella stessa tabella.</li>
-  <li><strong>Area centrale</strong> — mostra la tabella del gruppo selezionato con tutte le voci e le traduzioni.</li>
+  <li><strong>Barra laterale sinistra</strong> — elenca i gruppi. Clic su un gruppo per aprirlo. I gruppi con suffisso _1, _2… vengono affiancati nella stessa tabella.</li>
+  <li><strong>Area centrale</strong> — tabella con tutte le voci e le traduzioni per ogni lingua attiva.</li>
 </ul>
 
-<p style="margin-top:8px"><strong>Modificare una cella</strong> — clicca su una qualsiasi cella di testo per entrare in modalità modifica. Il bordo diventa colorato (blu=IT, rosso=EN, viola=GB, giallo=DE). Premi <span class="kbd">Invio</span> per confermare o <span class="kbd">Esc</span> per annullare. La cella modificata diventa <strong>gialla</strong> con bordo arancione, così puoi sempre vedere cosa hai cambiato.</p>
+<p style="margin-top:8px"><strong>Modificare una cella</strong> — <strong>doppio clic</strong> per aprire la modifica. Il bordo diventa colorato (blu=IT, rosso=EN, viola=GB, giallo=DE). <span class="kbd">Invio</span> conferma, <span class="kbd">Esc</span> annulla. <span class="kbd">Shift+Invio</span> inserisce un a capo. La cella modificata diventa <strong>gialla</strong>.</p>
 
-<p style="margin-top:8px"><strong>Pulsanti lingua (IT / EN / GB / DE)</strong> — nella barra in alto puoi attivare o disattivare le colonne lingua. Clicca un pulsante per nascondere quella lingua e semplificare la vista. Almeno una lingua deve rimanere visibile.</p>
+<p style="margin-top:8px"><strong>Pulsanti lingua (IT / EN / GB / DE)</strong> — nella topbar, attiva o disattiva le colonne lingua. Almeno una lingua deve rimanere visibile.</p>
 
-<p style="margin-top:8px"><strong>Ricerca voci</strong> — la casella di ricerca sopra la tabella filtra le righe per valore numerico o per testo in qualsiasi lingua visibile.</p>
+<p style="margin-top:8px"><strong>Ricerca voci</strong> — la casella sopra la tabella filtra le righe per valore numerico o per testo in qualsiasi lingua visibile.</p>
 
-<p style="margin-top:8px"><strong>📊 Vista insieme</strong> — il pulsante nella topbar apre una visualizzazione che affianca più elenchi della stessa sessione per un confronto rapido senza uscire dall'editor.</p>
+<p style="margin-top:8px"><strong>📊 Vista insieme</strong> — affianca più elenchi della stessa sessione per un confronto rapido senza uscire dall'editor.</p>
 
-<p style="margin-top:8px"><strong>📑 Seleziona elenchi</strong> — permette di cambiare la selezione degli elenchi da visualizzare senza ricaricare il file.</p>
+<p style="margin-top:8px"><strong>📑 Seleziona elenchi</strong> — cambia la selezione degli elenchi visibili senza ricaricare il file.</p>
 
-<p style="margin-top:8px"><strong>📂 Carica altro</strong> — sostituisce il file corrente con uno nuovo, azzerando tutte le modifiche non salvate.</p>
+<p style="margin-top:8px"><strong>📂 Carica altro</strong> — sostituisce il file corrente con uno nuovo, azzerando le modifiche non salvate.</p>
 
-<p style="margin-top:8px"><strong>➕ Aggiungere una voce</strong> — in fondo ad ogni tabella c'è il pulsante <em>➕ Aggiungi voce</em>. Cliccalo per aprire una finestra dove inserire il valore (numerico o testo) e i testi per tutte le lingue. La nuova voce viene aggiunta all'elenco e la modifica è annullabile con Ctrl+Z.</p>
+<p style="margin-top:8px"><strong>➕ Aggiungere una voce</strong> — pulsante <em>➕ Aggiungi voce</em> in fondo alla tabella. Inserisci il valore (numerico o testo) e i testi per tutte le lingue. Annullabile con Ctrl+Z.</p>
 
-<p style="margin-top:8px"><strong>🗑 Eliminare una voce</strong> — passa il mouse su una riga della tabella: appare il pulsante <strong>🗑</strong> a sinistra del valore. Cliccalo per eliminare quella voce. L'eliminazione è annullabile con Ctrl+Z.</p>
+<p style="margin-top:8px"><strong>🗑 Eliminare una voce</strong> — passa il mouse su una riga: appare il pulsante <strong>🗑</strong> a sinistra del valore. Cliccalo per eliminare la voce. Annullabile con Ctrl+Z.</p>
 
-<div class="warn">L'eliminazione di una voce rimuove anche tutti i suoi testi in tutte le lingue. Usa Ctrl+Z subito dopo per annullare.</div>
-
-<div class="tip">Il badge arancione in topbar (es. <em>3 modifiche</em>) conta le celle che hai modificato nella sessione corrente. Si azzera solo con Ripristina tutto o ricaricando il file.</div>
+<div class="warn">L'eliminazione rimuove la voce e tutti i suoi testi in tutte le lingue. Usa Ctrl+Z subito dopo per annullare.</div>
+<div class="tip">Il badge arancione in topbar (es. <em>3 modifiche</em>) conta le celle modificate nella sessione corrente. Si azzera solo con Ripristina tutto o ricaricando il file.</div>
 
 <hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0">
 
 <h3 id="s3">🔀 3 — Strumento 2: Confronta due file</h3>
 
-<p><strong>Passo 1 — Caricamento.</strong> Clicca <em>🔀 Confronta due file</em> dalla schermata iniziale (oppure il pulsante <em>🔀 Confronta file</em> nella topbar dell'editor). Carica il <strong>File A</strong> (la versione originale o di riferimento) e il <strong>File B</strong> (la versione modificata o più recente). Entrambi devono essere file Excel con i fogli TextList e TextListEntry.</p>
+<p><strong>Passo 1 — Caricamento.</strong> Clicca <em>🔀 Confronta due file</em>. Carica il <strong>File A</strong> (originale o di riferimento) e il <strong>File B</strong> (versione modificata o più recente).</p>
 
-<p style="margin-top:8px"><strong>Passo 2 — Avvia confronto.</strong> Una volta caricati entrambi i file il pulsante <em>Avvia confronto</em> diventa attivo. Cliccalo per iniziare. Il programma calcola automaticamente tutte le differenze e mostra il conteggio totale nella topbar.</p>
+<p style="margin-top:8px"><strong>Passo 2 — Avvia confronto.</strong> Clicca <em>Avvia confronto</em>. Il programma calcola tutte le differenze e mostra il conteggio totale in topbar.</p>
 
-<p style="margin-top:8px"><strong>Passo 3 — Navigazione.</strong> La barra laterale mostra tutti gli elenchi con il numero di differenze trovate in ciascuno:</p>
+<p style="margin-top:8px"><strong>Colori della tabella:</strong></p>
 <ul>
-  <li><span style="background:#fee2e2;color:#dc2626;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:700">X diff</span> — ci sono differenze in questo elenco</li>
-  <li><span style="background:#dcfce7;color:#16a34a;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:700">✓ uguale</span> — nessuna differenza</li>
+  <li style="margin-bottom:4px"><span style="display:inline-block;width:12px;height:12px;background:#fca5a5;border-radius:2px;vertical-align:middle;margin-right:4px"></span><strong>Rosso</strong> — testo diverso nella colonna A</li>
+  <li style="margin-bottom:4px"><span style="display:inline-block;width:12px;height:12px;background:#86efac;border-radius:2px;vertical-align:middle;margin-right:4px"></span><strong>Verde</strong> — testo diverso nella colonna B</li>
+  <li style="margin-bottom:4px"><span style="display:inline-block;width:12px;height:12px;background:#fed7aa;border-radius:2px;vertical-align:middle;margin-right:4px"></span><strong>Arancione</strong> — voce presente solo in A</li>
+  <li style="margin-bottom:4px"><span style="display:inline-block;width:12px;height:12px;background:#bbf7d0;border-radius:2px;vertical-align:middle;margin-right:4px"></span><strong>Verde chiaro</strong> — voce presente solo in B</li>
+  <li style="margin-bottom:4px"><span style="display:inline-block;width:12px;height:12px;background:#fef9c3;border-radius:2px;vertical-align:middle;margin-right:4px"></span><strong>Giallo</strong> — cella modificata in questa sessione</li>
 </ul>
 
-<p style="margin-top:8px"><strong>Lettura della tabella.</strong> Per ogni riga vengono mostrate le colonne di A e di B affiancate. Il significato dei colori:</p>
-<ul>
-  <li style="margin-bottom:4px"><span style="display:inline-block;width:12px;height:12px;background:#fca5a5;border-radius:2px;vertical-align:middle;margin-right:4px"></span><strong>Rosso</strong> — il testo nella colonna A è diverso da quello in B</li>
-  <li style="margin-bottom:4px"><span style="display:inline-block;width:12px;height:12px;background:#86efac;border-radius:2px;vertical-align:middle;margin-right:4px"></span><strong>Verde</strong> — il testo nella colonna B è diverso da quello in A</li>
-  <li style="margin-bottom:4px"><span style="display:inline-block;width:12px;height:12px;background:#fed7aa;border-radius:2px;vertical-align:middle;margin-right:4px"></span><strong>Arancione</strong> — la voce esiste solo nel file A (mancante in B)</li>
-  <li style="margin-bottom:4px"><span style="display:inline-block;width:12px;height:12px;background:#bbf7d0;border-radius:2px;vertical-align:middle;margin-right:4px"></span><strong>Verde chiaro</strong> — la voce esiste solo nel file B (aggiunta in B)</li>
-  <li style="margin-bottom:4px"><span style="display:inline-block;width:12px;height:12px;background:#fef9c3;border-radius:2px;vertical-align:middle;margin-right:4px"></span><strong>Giallo</strong> — cella modificata da te in questa sessione di lavoro</li>
-</ul>
+<p style="margin-top:8px"><strong>Filtri:</strong> Tutti / Solo differenze / Solo in A / Solo in B.</p>
 
-<p style="margin-top:8px"><strong>Filtri disponibili:</strong></p>
-<ul>
-  <li><strong>Tutti</strong> — mostra tutte le voci dell'elenco</li>
-  <li><strong>Solo differenze</strong> — mostra solo le voci che differiscono tra A e B</li>
-  <li><strong>Solo in A</strong> — mostra solo le voci presenti esclusivamente in A</li>
-  <li><strong>Solo in B</strong> — mostra solo le voci presenti esclusivamente in B</li>
-</ul>
-
-<p style="margin-top:8px"><strong>Modificare le celle.</strong> Puoi cliccare qualsiasi cella sia nella colonna A che nella colonna B per modificarla direttamente. Il bordo è azzurro per la colonna A e verde per la colonna B. Dopo la modifica la cella diventa gialla, mentre i colori rosso/verde del confronto si aggiornano automaticamente.</p>
+<p style="margin-top:8px"><strong>Modificare le celle.</strong> <strong>Doppio clic</strong> su qualsiasi cella di A o B per modificarla direttamente. La cella diventa gialla dopo la modifica.</p>
 
 <p style="margin-top:8px"><strong>Copiare righe tra i file:</strong></p>
 <ul>
-  <li><strong>→B</strong> (pulsante per riga, sfondo azzurro) — copia tutti i testi di quella riga dal file A al file B</li>
-  <li><strong>←A</strong> (pulsante per riga, sfondo verde) — copia tutti i testi di quella riga dal file B al file A</li>
-  <li><strong>A→B</strong> (in testa alla tabella) — copia tutte le righe visibili da A a B in un solo clic</li>
-  <li><strong>B→A</strong> (in testa alla tabella) — copia tutte le righe visibili da B a A in un solo clic</li>
+  <li><strong>→B</strong> — copia la riga da A a B</li>
+  <li><strong>←A</strong> — copia la riga da B ad A</li>
+  <li><strong>A→B / B→A</strong> (in testa alla tabella) — copia tutte le righe visibili in un clic</li>
 </ul>
-<div class="tip">Usa il filtro <em>Solo differenze</em> prima di cliccare A→B o B→A per copiare solo le voci che differiscono, senza sovrascrivere quelle già uguali.</div>
-<div class="warn">Le copie di riga sono annullabili con Ctrl+Z o il pulsante ↩ Annulla. Tuttavia Ripristina tutto azzera entrambi i file.</div>
+<div class="tip">Usa il filtro <em>Solo differenze</em> prima di A→B o B→A per copiare solo le voci diverse, senza sovrascrivere quelle già uguali.</div>
+<div class="warn">Le copie di riga sono annullabili con Ctrl+Z. Ripristina tutto azzera entrambi i file.</div>
 
-<p style="margin-top:8px"><strong>➕ Aggiungere una voce</strong> — in fondo ad ogni sezione c'è il pulsante <em>➕ Aggiungi voce (in A e B)</em>. La voce viene aggiunta contemporaneamente in entrambi i file con lo stesso valore e testi. Annullabile con Ctrl+Z.</p>
+<p style="margin-top:8px"><strong>➕ Aggiungere una voce</strong> — <em>➕ Aggiungi voce (in A e B)</em> in fondo alla sezione: aggiunge la voce in entrambi i file simultaneamente. Annullabile con Ctrl+Z.</p>
 
-<p style="margin-top:8px"><strong>🗑 Eliminare una voce</strong> — passa il mouse su una riga: appare il pulsante <strong>🗑</strong> che elimina la voce da entrambi i file A e B simultaneamente. Annullabile con Ctrl+Z.</p>
+<p style="margin-top:8px"><strong>🗑 Eliminare una voce</strong> — pulsante 🗑 per riga: elimina da A e B insieme. Annullabile con Ctrl+Z.</p>
 
-<p style="margin-top:8px"><strong>🗑 Eliminare una sezione vuota</strong> — quando una sezione non ha più voci (0 voci), nell'intestazione compare automaticamente il pulsante <strong>🗑 Elimina sezione</strong> che rimuove l'elenco da entrambi i file. Annullabile con Ctrl+Z.</p>
+<p style="margin-top:8px"><strong>🗑 Eliminare una sezione vuota</strong> — quando una sezione arriva a 0 voci, appare il pulsante <em>🗑 Elimina sezione</em> nell'intestazione. Annullabile con Ctrl+Z.</p>
 
 <hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0">
 
-<h3 id="s4">🖱 4 — Selezione multi-cella stile Excel</h3>
-<p>Funziona sia nell'editor che nel confronto file.</p>
+<h3 id="s4">🔗 4 — Strumento 3: Unisci file</h3>
+
+<p>Permette di combinare due o più file Excel in un unico Export unificato, con controllo completo su come gestire i conflitti.</p>
+
+<p style="margin-top:8px"><strong>Passo 1 — Carica i file.</strong> Clicca <em>🔗 Unisci file</em> dalla schermata iniziale. Trascina i file nella zona di caricamento oppure clicca <em>Seleziona file</em>. Puoi caricare quanti file vuoi (minimo 2). Per ogni file viene mostrato il nome, il numero di elenchi e di voci. Il caricamento avviene uno alla volta con barra di avanzamento.</p>
+
+<p style="margin-top:8px"><strong>Riordinare i file.</strong> Usa i pulsanti <strong>▲</strong> e <strong>▼</strong> accanto a ogni file per cambiarne l'ordine. L'ordine è importante: determina quale versione viene considerata "prima" e quale "ultima" in caso di conflitto.</p>
+
+<p style="margin-top:8px"><strong>Passo 2 — Avvia unione.</strong> Clicca <em>🔗 Avvia unione</em>. Il programma analizza tutti i file e rileva automaticamente due tipi di conflitti:</p>
 <ul>
-  <li><strong>Ctrl+clic</strong> su una cella — aggiunge la cella alla selezione (diventa blu). Ctrl+clic di nuovo la deseleziona.</li>
-  <li><strong>Ctrl+Shift+clic</strong> su una cella — seleziona tutte le celle dall'ultima selezionata fino a quella cliccata (intervallo, come Excel).</li>
-  <li>Puoi selezionare celle da righe e colonne diverse.</li>
-  <li>Non appena ci sono celle selezionate appare la <strong>toolbar in basso</strong> con le azioni disponibili.</li>
+  <li><strong>Conflitti su elenchi</strong> — stesso nome di elenco presente in file diversi con ListRange o commenti differenti.</li>
+  <li><strong>Conflitti su voci</strong> — stessa voce (elenco + valore) in file diversi con testi diversi in almeno una lingua.</li>
 </ul>
-<p style="margin-top:8px"><strong>Azioni dalla toolbar (e tasti rapidi equivalenti):</strong></p>
+<p style="margin-top:6px">Se non ci sono conflitti, il file unito viene scaricato direttamente senza ulteriori passi.</p>
+
+<p style="margin-top:8px"><strong>Passo 3 — Risoluzione conflitti.</strong> Se ci sono conflitti, appare la finestra di risoluzione con le voci divise in pagine (50 per pagina). Per ogni voce in conflitto:</p>
 <ul>
-  <li><strong>📋 Copia</strong> (<span class="kbd">Ctrl+C</span>) — copia le celle selezionate in formato tabulare (tab tra colonne, a capo tra righe), compatibile con Excel. Se è selezionata una sola cella copia solo quel testo.</li>
-  <li><strong>📥 Incolla</strong> (<span class="kbd">Ctrl+V</span>) — incolla un blocco copiato da Excel rispettando la struttura righe/colonne. Se il testo incollato è una singola cella, lo stesso valore viene incollato in tutte le celle selezionate.</li>
+  <li>Viene mostrata una <strong>riga per ogni lingua</strong> (IT, EN, GB, DE).</li>
+  <li>Le lingue <strong>identiche</strong> in tutti i file mostrano <em>✓ identico</em> — nessuna scelta richiesta.</li>
+  <li>Le lingue <strong>diverse</strong> mostrano il testo di ogni file come pulsante — <strong>clicca il pulsante del file che vuoi tenere</strong> per quella lingua.</li>
+  <li>Puoi scegliere lingue diverse da file diversi per la stessa voce: es. IT dal file 1, EN dal file 2, DE dal file 3.</li>
+</ul>
+
+<p style="margin-top:8px"><strong>Risoluzione rapida (in blocco):</strong></p>
+<ul>
+  <li><strong>Tieni tutti i primi</strong> — applica il primo file per tutte le lingue di tutti i conflitti</li>
+  <li><strong>Tieni tutti gli ultimi</strong> — applica l'ultimo file per tutte le lingue di tutti i conflitti</li>
+</ul>
+<div class="tip">Con molti conflitti: usa prima <em>Tieni tutti gli ultimi</em> per impostare un default, poi sfoglia le pagine e correggi manualmente solo le eccezioni.</div>
+
+<p style="margin-top:8px"><strong>Passo 4 — Esportazione.</strong> Clicca <em>✅ Conferma e scarica</em>. Il file unito viene scaricato come <span class="kbd">Export_merged_vX.X_AAAA-MM-GG_HHMM.xlsx</span>, compatibile con il TIA Portal.</p>
+
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0">
+
+<h3 id="s5">🖱 5 — Selezione multi-cella stile Excel</h3>
+<p>Funziona nell'editor, nel confronto e nella vista insieme.</p>
+<ul>
+  <li><strong>Ctrl+clic</strong> su una cella — la aggiunge alla selezione (diventa blu). Ctrl+clic di nuovo la deseleziona.</li>
+  <li><strong>Ctrl+Shift+clic</strong> — seleziona tutte le celle dall'ultima selezionata fino a quella cliccata, <strong>della stessa lingua</strong>. Nel confronto seleziona solo celle dello stesso slot (A oppure B) e della stessa lingua.</li>
+  <li><strong>Doppio clic</strong> — apre la modifica della cella.</li>
+  <li><strong>Clic semplice</strong> — se ci sono celle selezionate, le deseleziona tutte.</li>
+</ul>
+<div class="tip">Flusso tipico: Ctrl+clic sulla prima cella → Ctrl+Shift+clic sull'ultima → le celle in mezzo della stessa lingua vengono selezionate. Poi Ctrl+C per copiare o Ctrl+V per incollare.</div>
+
+<p style="margin-top:8px"><strong>Azioni dalla toolbar e tasti rapidi:</strong></p>
+<ul>
+  <li><strong>📋 Copia</strong> (<span class="kbd">Ctrl+C</span>) — copia in formato tabulare (tab tra colonne, a capo tra righe), compatibile con Excel. I testi con a capo interno vengono preservati correttamente.</li>
+  <li><strong>📥 Incolla</strong> (<span class="kbd">Ctrl+V</span>) — se il testo copiato è una griglia (ha tabulazioni), i valori vengono distribuiti cella per cella in base alla posizione. Un valore singolo viene incollato in tutte le celle selezionate.</li>
   <li><strong>🗑 Svuota</strong> (<span class="kbd">Canc</span>) — cancella il contenuto di tutte le celle selezionate.</li>
   <li><strong>↩ Annulla</strong> (<span class="kbd">Ctrl+Z</span>) — annulla l'ultima operazione multi-cella.</li>
-  <li><strong>✕ Esc</strong> (<span class="kbd">Esc</span>) — deseleziona tutte le celle e chiude la toolbar.</li>
+  <li><strong>✕ Esc</strong> (<span class="kbd">Esc</span>) — deseleziona tutto e chiude la toolbar.</li>
 </ul>
-<div class="tip">Flusso tipico: seleziona un blocco di celle con Ctrl+Shift+clic → copia con Ctrl+C → seleziona la destinazione → incolla con Ctrl+V. Funziona anche copiando da Excel e incollando qui, e viceversa.</div>
 
 <hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0">
 
-<h3 id="s5">↩ 5 — Annulla modifiche (Undo) e Ripristina tutto</h3>
-<p>Il programma mantiene uno storico delle ultime <strong>100 operazioni</strong> eseguite nella sessione corrente.</p>
+<h3 id="s6">↩ 6 — Annulla modifiche (Undo) e Ripristina tutto</h3>
+<p>Il programma mantiene uno storico delle ultime <strong>100 operazioni</strong> nella sessione corrente.</p>
 <ul>
-  <li><strong>↩ Annulla</strong> (pulsante in topbar o <span class="kbd">Ctrl+Z</span>) — annulla l'ultima modifica fatta, un passo alla volta. Il pulsante è grigio (disabilitato) quando non ci sono operazioni da annullare, diventa giallo appena hai qualcosa da annullare. Funziona per modifiche singole, incolla multi-cella e copie di riga.</li>
-  <li><strong>🔄 Ripristina tutto</strong> (pulsante rosso in topbar) — riporta tutti i testi esattamente al valore presente nel file originale caricato, azzerando tutte le modifiche della sessione. Il programma chiede conferma prima di procedere. <em>Questa operazione non è annullabile.</em></li>
+  <li><strong>↩ Annulla</strong> (topbar o <span class="kbd">Ctrl+Z</span>) — annulla un'operazione alla volta: modifiche singole, incolla multi-cella, copie di riga (→B/←A), aggiunta e eliminazione voci.</li>
+  <li><strong>🔄 Ripristina tutto</strong> (pulsante rosso in topbar) — riporta tutti i testi esattamente al file originale caricato. Chiede conferma. <em>Non è annullabile.</em></li>
 </ul>
-<div class="warn">Ctrl+Z funziona solo quando il cursore non si trova all'interno di un campo di testo (altrimenti il browser gestisce l'undo interno del campo).</div>
+<div class="warn">Ctrl+Z funziona solo quando il cursore non si trova dentro un campo di testo (altrimenti il browser gestisce il proprio undo interno).</div>
 
 <hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0">
 
-<h3 id="s6">💾 6 — Esportazione file</h3>
-<p>Il file esportato è un file Excel (.xlsx) compatibile con il TIA Portal, con la stessa struttura del file originale.</p>
+<h3 id="s7">💾 7 — Esportazione file</h3>
+<p>Tutti i file esportati sono .xlsx compatibili con il TIA Portal, con la stessa struttura del file originale.</p>
 
-<p style="margin-top:8px"><strong>Nell'editor (singolo file):</strong> clicca <em>💾 Scarica Export_modified.xlsx</em> nella topbar. Il file viene scaricato nella cartella Download del browser.</p>
+<p style="margin-top:8px"><strong>Editor singolo file:</strong> <em>💾 Scarica Export_modified.xlsx</em> nella topbar.</p>
 
-<p style="margin-top:8px"><strong>Nel confronto due file:</strong> hai due pulsanti separati:</p>
+<p style="margin-top:8px"><strong>Confronto due file:</strong> due pulsanti separati — <em>💾 Esporta B modificato</em> e <em>💾 Esporta A modificato</em> (azzurro).</p>
+
+<p style="margin-top:8px"><strong>Unisci file:</strong> <em>✅ Conferma e scarica</em> al termine della risoluzione conflitti.</p>
+
+<p style="margin-top:8px"><strong>Formato nomi file:</strong></p>
 <ul>
-  <li><em>💾 Esporta B modificato</em> — esporta il file B con tutte le modifiche apportate (incluse le righe copiate da A)</li>
-  <li><em>💾 Esporta A modificato</em> (azzurro) — esporta il file A con tutte le modifiche apportate</li>
+  <li>Editor: <span class="kbd">Export_modified_vX.X_AAAA-MM-GG_HHMM.xlsx</span></li>
+  <li>Confronto: <span class="kbd">NomeFile_modified_vX.X_AAAA-MM-GG_HHMM.xlsx</span></li>
+  <li>Unione: <span class="kbd">Export_merged_vX.X_AAAA-MM-GG_HHMM.xlsx</span></li>
 </ul>
-
-<p style="margin-top:8px"><strong>Formato del nome file:</strong> <span class="kbd">NomeFile_modified_vX.X_AAAA-MM-GG_HHMM.xlsx</span></p>
-<ul>
-  <li><em>NomeFile</em> = nome del file originale caricato</li>
-  <li><em>vX.X</em> = versione progetto inserita (omessa se non impostata)</li>
-  <li><em>AAAA-MM-GG_HHMM</em> = data e ora dell'esportazione</li>
-</ul>
-<div class="warn">I browser salvano i file nella cartella Download predefinita. Per scegliere la cartella di destinazione, attiva nelle impostazioni del browser l'opzione <em>"Chiedi dove salvare ogni file prima del download"</em> (in Chrome/Edge: Impostazioni → Download).</div>
+<div class="warn">I browser salvano nella cartella Download predefinita. Per scegliere la cartella di destinazione, attiva nelle impostazioni del browser l'opzione "Chiedi dove salvare ogni file" (Chrome/Edge: Impostazioni → Download).</div>
 
 <hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0">
 
-<h3 id="s7">⌨️ 7 — Riepilogo tasti rapidi</h3>
+<h3 id="s8">⌨️ 8 — Riepilogo tasti rapidi</h3>
 <table style="width:100%;border-collapse:collapse;font-size:12px">
-  <thead><tr style="background:#f8fafc"><th style="padding:6px 10px;text-align:left;border-bottom:2px solid #e2e8f0;color:#64748b">Tasto</th><th style="padding:6px 10px;text-align:left;border-bottom:2px solid #e2e8f0;color:#64748b">Azione</th><th style="padding:6px 10px;text-align:left;border-bottom:2px solid #e2e8f0;color:#64748b">Contesto</th></tr></thead>
+  <thead><tr style="background:#f8fafc">
+    <th style="padding:6px 10px;text-align:left;border-bottom:2px solid #e2e8f0;color:#64748b">Tasto</th>
+    <th style="padding:6px 10px;text-align:left;border-bottom:2px solid #e2e8f0;color:#64748b">Azione</th>
+    <th style="padding:6px 10px;text-align:left;border-bottom:2px solid #e2e8f0;color:#64748b">Contesto</th>
+  </tr></thead>
   <tbody>
-    <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:5px 10px"><span class="kbd">Ctrl+Z</span></td><td style="padding:5px 10px">Annulla ultima modifica</td><td style="padding:5px 10px;color:#64748b">Fuori dai campi di testo</td></tr>
-    <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:5px 10px"><span class="kbd">Ctrl+C</span></td><td style="padding:5px 10px">Copia celle selezionate</td><td style="padding:5px 10px;color:#64748b">Con celle selezionate</td></tr>
-    <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:5px 10px"><span class="kbd">Ctrl+V</span></td><td style="padding:5px 10px">Incolla in tutte le celle selezionate</td><td style="padding:5px 10px;color:#64748b">Con celle selezionate</td></tr>
-    <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:5px 10px"><span class="kbd">Ctrl+clic</span></td><td style="padding:5px 10px">Aggiunge/rimuove cella dalla selezione</td><td style="padding:5px 10px;color:#64748b">Su una cella di testo</td></tr>
-    <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:5px 10px"><span class="kbd">Canc</span></td><td style="padding:5px 10px">Svuota le celle selezionate</td><td style="padding:5px 10px;color:#64748b">Con celle selezionate</td></tr>
-    <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:5px 10px"><span class="kbd">Invio</span></td><td style="padding:5px 10px">Conferma modifica cella</td><td style="padding:5px 10px;color:#64748b">Durante modifica singola</td></tr>
+    <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:5px 10px"><span class="kbd">Doppio clic</span></td><td style="padding:5px 10px">Apre modifica cella</td><td style="padding:5px 10px;color:#64748b">Su una cella di testo</td></tr>
+    <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:5px 10px"><span class="kbd">Invio</span></td><td style="padding:5px 10px">Conferma modifica</td><td style="padding:5px 10px;color:#64748b">Durante modifica singola</td></tr>
+    <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:5px 10px"><span class="kbd">Shift+Invio</span></td><td style="padding:5px 10px">A capo nel testo</td><td style="padding:5px 10px;color:#64748b">Durante modifica singola</td></tr>
     <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:5px 10px"><span class="kbd">Esc</span></td><td style="padding:5px 10px">Annulla modifica / Deseleziona celle</td><td style="padding:5px 10px;color:#64748b">Durante modifica o selezione</td></tr>
+    <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:5px 10px"><span class="kbd">Ctrl+clic</span></td><td style="padding:5px 10px">Seleziona / deseleziona cella</td><td style="padding:5px 10px;color:#64748b">Su una cella di testo</td></tr>
+    <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:5px 10px"><span class="kbd">Ctrl+Shift+clic</span></td><td style="padding:5px 10px">Seleziona intervallo (stessa lingua e slot)</td><td style="padding:5px 10px;color:#64748b">Su una cella di testo</td></tr>
+    <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:5px 10px"><span class="kbd">Ctrl+C</span></td><td style="padding:5px 10px">Copia celle selezionate</td><td style="padding:5px 10px;color:#64748b">Con celle selezionate</td></tr>
+    <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:5px 10px"><span class="kbd">Ctrl+V</span></td><td style="padding:5px 10px">Incolla nelle celle selezionate</td><td style="padding:5px 10px;color:#64748b">Con celle selezionate</td></tr>
+    <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:5px 10px"><span class="kbd">Canc</span></td><td style="padding:5px 10px">Svuota le celle selezionate</td><td style="padding:5px 10px;color:#64748b">Con celle selezionate</td></tr>
+    <tr style="border-bottom:1px solid #f1f5f9"><td style="padding:5px 10px"><span class="kbd">Ctrl+Z</span></td><td style="padding:5px 10px">Annulla ultima modifica</td><td style="padding:5px 10px;color:#64748b">Fuori dai campi di testo</td></tr>
   </tbody>
 </table>
-`;
+`
 
 function buildChangelogHTML(){
   return CHANGELOG.map(e=>`
@@ -2145,7 +3012,6 @@ document.addEventListener('keydown',ev=>{
       const data=JSON.parse(await resp.text());
       if(data.version && compareVersions(CURRENT_VERSION,data.version)<0){
         document.getElementById('updateMsg').textContent=`🚀 Nuova versione disponibile: v${data.version} (tu hai v${CURRENT_VERSION})`;
-        // Build download URL for the HTML file
         const dlBtn=document.getElementById('updateDownload');
         dlBtn.onclick=async function(e){
           e.preventDefault();
@@ -2173,7 +3039,6 @@ document.addEventListener('keydown',ev=>{
   if(token){
     checkForUpdate(token);
   } else {
-    // Show token prompt after a short delay
     setTimeout(()=>document.getElementById('ghTokenModal').classList.add('on'),1500);
   }
 })();
