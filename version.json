@@ -1,6 +1,6 @@
 {
-  "version": "5.7",
+  "version": "5.8",
   "filename": "TIA_TextList_Editor_MULTI_v5.7.html",
   "date": "2026-05-19",
-  "notes": "Navigazione migliorata, rimosso campo versione progetto dalla home"
+  "notes": "Scroll orizzontale tabella: tutte le colonne visibili"
 }
