@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'version.json'
+      - 'TIA_TextList_Editor_MULTI_v*.html'
 
 jobs:
   release:
@@ -14,16 +15,42 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Read version info
+      - name: Read version and auto-rename HTML if needed
         id: version
         run: |
           VERSION=$(jq -r '.version' version.json)
-          FILENAME=$(jq -r '.filename' version.json)
           NOTES=$(jq -r '.notes' version.json)
           DATE=$(jq -r '.date' version.json)
+          EXPECTED_FILENAME="TIA_TextList_Editor_MULTI_v${VERSION}.html"
+
+          # Find any existing HTML file matching the pattern
+          CURRENT_FILE=$(ls TIA_TextList_Editor_MULTI_v*.html 2>/dev/null | head -1)
+
+          if [ -z "$CURRENT_FILE" ]; then
+            echo "❌ Nessun file HTML trovato!"
+            exit 1
+          fi
+
+          # Rename if name doesn't match expected
+          if [ "$CURRENT_FILE" != "$EXPECTED_FILENAME" ]; then
+            echo "🔄 Rinomino $CURRENT_FILE -> $EXPECTED_FILENAME"
+            git mv "$CURRENT_FILE" "$EXPECTED_FILENAME"
+            # Update version.json filename field
+            jq --arg f "$EXPECTED_FILENAME" '.filename = $f' version.json > version.tmp && mv version.tmp version.json
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add version.json
+            git commit -m "chore: auto-rename HTML to match version v${VERSION}"
+            git push
+          else
+            echo "✅ Nome file già corretto: $EXPECTED_FILENAME"
+          fi
+
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "filename=$FILENAME" >> "$GITHUB_OUTPUT"
+          echo "filename=$EXPECTED_FILENAME" >> "$GITHUB_OUTPUT"
           echo "notes=$NOTES" >> "$GITHUB_OUTPUT"
           echo "date=$DATE" >> "$GITHUB_OUTPUT"
 
