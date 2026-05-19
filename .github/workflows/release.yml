@@ -1,0 +1,46 @@
+name: Create Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'version.json'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version info
+        id: version
+        run: |
+          VERSION=$(jq -r '.version' version.json)
+          FILENAME=$(jq -r '.filename' version.json)
+          NOTES=$(jq -r '.notes' version.json)
+          DATE=$(jq -r '.date' version.json)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "filename=$FILENAME" >> "$GITHUB_OUTPUT"
+          echo "notes=$NOTES" >> "$GITHUB_OUTPUT"
+          echo "date=$DATE" >> "$GITHUB_OUTPUT"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: "TIA Text Editor v${{ steps.version.outputs.version }}"
+          body: |
+            ## 🚀 TIA Portal Text List Editor v${{ steps.version.outputs.version }}
+
+            📅 Data: ${{ steps.version.outputs.date }}
+
+            ### Note
+            ${{ steps.version.outputs.notes }}
+
+            ### Download
+            Scarica il file **${{ steps.version.outputs.filename }}** qui sotto e aprilo nel browser.
+          files: ${{ steps.version.outputs.filename }}
+          make_latest: true
