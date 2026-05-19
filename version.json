@@ -2,5 +2,5 @@
   "version": "3.2",
   "filename": "TIA_TextList_Editor_MULTI_v3.2.html",
   "date": "2026-04-14",
-  "notes": "Fix Ctrl+Shift nel confronto, filtro lingua applicato sempre"
+  "notes": "Fix Ctrl+Shift nel confronto, filtro lingua applicato sempre. Aggiunto auto-update check."
 }
