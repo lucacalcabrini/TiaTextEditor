@@ -5,7 +5,6 @@ on:
     branches: [main]
     paths:
       - 'version.json'
-      - 'TIA_TextList_Editor_MULTI_v*.html'
 
 jobs:
   release:
@@ -18,7 +17,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Read version and auto-rename HTML if needed
+      - name: Inject version into HTML and rename file
         id: version
         run: |
           VERSION=$(jq -r '.version' version.json)
@@ -26,27 +25,59 @@ jobs:
           DATE=$(jq -r '.date' version.json)
           EXPECTED_FILENAME="TIA_TextList_Editor_MULTI_v${VERSION}.html"
 
-          # Find any existing HTML file matching the pattern
+          # Find existing HTML file
           CURRENT_FILE=$(ls TIA_TextList_Editor_MULTI_v*.html 2>/dev/null | head -1)
-
           if [ -z "$CURRENT_FILE" ]; then
             echo "❌ Nessun file HTML trovato!"
             exit 1
           fi
 
-          # Rename if name doesn't match expected
+          echo "📄 File trovato: $CURRENT_FILE"
+          echo "🎯 Versione target: $VERSION"
+
+          # Extract current version from HTML for the changelog cur flag
+          CURRENT_VER=$(grep -o "const APP_VERSION='[^']*'" "$CURRENT_FILE" | grep -o "'[^']*'" | tr -d "'")
+          echo "📌 Versione attuale nell'HTML: $CURRENT_VER"
+
+          # 1. Update APP_VERSION
+          sed -i "s/const APP_VERSION='[^']*'/const APP_VERSION='${VERSION}'/" "$CURRENT_FILE"
+
+          # 2. Update <title>
+          sed -i "s|<title>TIA Portal Text List Editor v[^<]*</title>|<title>TIA Portal Text List Editor v${VERSION}</title>|" "$CURRENT_FILE"
+
+          # 3. Update version shown on home screen (the colored span)
+          sed -i "s|color:#60a5fa\">v[0-9][^<]*</span>|color:#60a5fa\">v${VERSION}</span>|g" "$CURRENT_FILE"
+
+          # 4. Fix changelog: set old cur:true -> cur:false, new version gets cur:true
+          # Mark old current version as not current
+          sed -i "s/{ver:'${CURRENT_VER}',date:'[^']*',cur:true/{ver:'${CURRENT_VER}',date:'${DATE}',cur:false/" "$CURRENT_FILE"
+          # Add new changelog entry if not already present
+          if ! grep -q "ver:'${VERSION}'" "$CURRENT_FILE"; then
+            NEW_ENTRY="{ver:'${VERSION}',date:'${DATE}',cur:true,items:[\n    '${NOTES}',\n  ]},"
+            sed -i "s/const CHANGELOG=\[/const CHANGELOG=[\n  ${NEW_ENTRY}/" "$CURRENT_FILE"
+          else
+            # Entry exists, just mark it as current
+            sed -i "s/{ver:'${VERSION}',date:'[^']*',cur:false/{ver:'${VERSION}',date:'${DATE}',cur:true/" "$CURRENT_FILE"
+          fi
+
+          # 5. Rename file if needed
           if [ "$CURRENT_FILE" != "$EXPECTED_FILENAME" ]; then
             echo "🔄 Rinomino $CURRENT_FILE -> $EXPECTED_FILENAME"
             git mv "$CURRENT_FILE" "$EXPECTED_FILENAME"
-            # Update version.json filename field
-            jq --arg f "$EXPECTED_FILENAME" '.filename = $f' version.json > version.tmp && mv version.tmp version.json
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add version.json
-            git commit -m "chore: auto-rename HTML to match version v${VERSION}"
+          fi
+
+          # 6. Update version.json filename
+          jq --arg f "$EXPECTED_FILENAME" '.filename = $f' version.json > version.tmp && mv version.tmp version.json
+
+          # 7. Commit if anything changed
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: auto-bump version to v${VERSION} in HTML"
             git push
           else
-            echo "✅ Nome file già corretto: $EXPECTED_FILENAME"
+            echo "✅ Nessuna modifica necessaria"
           fi
 
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
