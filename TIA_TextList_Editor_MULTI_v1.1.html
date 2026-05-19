@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<title>TIA Portal Text List Editor v3.2</title>
+<title>TIA Portal Text List Editor v1.1</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -63,28 +63,15 @@ tr:nth-child(even) td{background:#fff}
 tr:nth-child(odd) td{background:#fafbfc}
 thead tr th{background:#f8fafc}
 thead tr.sub th{background:#f1f5f9;font-size:10px}
-.cell{padding:3px 6px;cursor:text;height:28px;font-size:12px;font-family:'JetBrains Mono',monospace;border-radius:4px;border:1px solid transparent;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;user-select:none;display:flex;align-items:center}
+.cell{padding:3px 6px;cursor:text;min-height:22px;font-size:12px;font-family:'JetBrains Mono',monospace;border-radius:4px;border:1px solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;user-select:none}
 .cell:hover{border-color:#cbd5e1}
-.cell .nl{color:#94a3b8;font-size:10px;margin:0 1px}
 .cell.empty{color:#94a3b8}
 .cell.modified{background:#fef9c3 !important;border-left:3px solid #d97706 !important}
 .cell.sel{background:#dbeafe !important;border:1.5px solid #3b82f6 !important}
 .cell.sel.modified{background:#fde68a !important;border:1.5px solid #d97706 !important}
-.cell-input{width:100%;min-height:28px;max-height:90px;border-radius:4px;padding:3px 6px;font-size:12px;font-family:'JetBrains Mono',monospace;outline:none;background:#fff;resize:none;overflow-y:auto;line-height:1.4}
+.cell-input{width:100%;border-radius:4px;padding:3px 6px;font-size:12px;font-family:'JetBrains Mono',monospace;outline:none;background:#fff}
 .version-badge{display:inline-flex;align-items:center;gap:5px;background:#1e3a5f;border:1px solid #3b82f6;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;color:#93c5fd;white-space:nowrap}
 .version-badge span{color:#60a5fa;font-family:'JetBrains Mono',monospace}
-.update-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(135deg,#1e40af,#7c3aed);color:#fff;padding:10px 20px;font-size:13px;font-weight:600;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.3);animation:slideDown .4s ease}
-@keyframes slideDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}
-.update-banner a{color:#fde68a;text-decoration:underline;cursor:pointer;margin-left:8px}
-.update-banner .update-close{position:absolute;right:16px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fff;font-size:18px;cursor:pointer;opacity:.7}
-.update-banner .update-close:hover{opacity:1}
-.gh-token-modal{display:none;position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.5);align-items:center;justify-content:center}
-.gh-token-modal.on{display:flex}
-.gh-token-box{background:#fff;border-radius:12px;padding:24px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-.gh-token-box h3{margin-bottom:8px;color:#0f172a}
-.gh-token-box p{font-size:12px;color:#64748b;margin-bottom:12px}
-.gh-token-box input{width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;font-family:'JetBrains Mono',monospace;margin-bottom:12px}
-.gh-token-box .btn-row{display:flex;gap:8px;justify-content:flex-end}
 .sel-toolbar{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;border-radius:10px;padding:8px 16px;gap:8px;align-items:center;box-shadow:0 8px 30px rgba(0,0,0,.5);z-index:9000;white-space:nowrap}
 .sel-toolbar.on{display:flex}
 .stb{padding:4px 12px;border-radius:6px;border:none;cursor:pointer;font-size:11px;font-weight:700}
@@ -95,24 +82,6 @@ thead tr.sub th{background:#f1f5f9;font-size:10px}
 .cell-only-b{background:#f0fdf4 !important}
 .tr-only-a td{background:#fff7ed !important}
 .tr-only-b td{background:#f0fdf4 !important}
-/* ROW ACTIONS */
-.row-del-btn{border:none;background:none;cursor:pointer;color:#94a3b8;font-size:13px;padding:0 3px;border-radius:3px;opacity:0;transition:.15s;line-height:1}
-tr:hover .row-del-btn{opacity:1}
-.row-del-btn:hover{color:#ef4444;background:#fee2e2}
-.add-row-btn{display:block;width:100%;padding:6px;border:1px dashed #cbd5e1;background:#f8fafc;color:#64748b;font-size:11px;font-weight:600;cursor:pointer;border-radius:0 0 6px 6px;text-align:center;transition:.15s}
-.add-row-btn:hover{background:#eff6ff;border-color:#3b82f6;color:#2563eb}
-/* ADD ROW MODAL */
-.addrow-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:7000;align-items:center;justify-content:center}
-.addrow-overlay.open{display:flex}
-.addrow-modal{background:#fff;border-radius:14px;width:min(440px,94vw);box-shadow:0 20px 50px rgba(0,0,0,.25);overflow:hidden}
-.addrow-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #e2e8f0}
-.addrow-header h3{font-size:14px;font-weight:700;color:#0f172a}
-.addrow-close{border:none;background:none;font-size:20px;cursor:pointer;color:#94a3b8}
-.addrow-body{padding:16px 18px;display:flex;flex-direction:column;gap:10px}
-.addrow-body label{font-size:11px;font-weight:600;color:#475569;margin-bottom:2px;display:block}
-.addrow-body input{width:100%;padding:7px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:13px;font-family:'JetBrains Mono',monospace;outline:none}
-.addrow-body input:focus{border-color:#3b82f6}
-.addrow-footer{display:flex;justify-content:flex-end;gap:8px;padding:10px 18px;border-top:1px solid #f1f5f9}
 .empty-state{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:#94a3b8}
 .empty-state .icon{font-size:48px;opacity:.3}
 .upload-zone,.selector-zone{background:#fff;border-radius:16px;padding:36px 42px;text-align:center;box-shadow:0 25px 50px rgba(0,0,0,.08);width:min(960px,92vw)}
@@ -213,7 +182,7 @@ tr:hover .row-del-btn{opacity:1}
     <div style="font-size:40px;margin-bottom:16px">⚙️</div>
     <h1>TIA Portal Text List Editor</h1>
     <p style="margin-bottom:6px">Carica il file Excel esportato dal TIA Portal.<br>Dopo il caricamento puoi scegliere quali elenchi aprire.</p>
-    <p style="font-size:12px;color:#64748b;margin-bottom:18px">versione app: <span style="font-family:'JetBrains Mono',monospace;color:#60a5fa">v3.2</span> &nbsp;·&nbsp; <button onclick="openHelp()" style="background:none;border:none;color:#60a5fa;cursor:pointer;font-size:12px;text-decoration:underline">❓ Manuale & Changelog</button></p>
+    <p style="font-size:12px;color:#64748b;margin-bottom:18px">versione app: <span style="font-family:'JetBrains Mono',monospace;color:#60a5fa">v1.1</span> &nbsp;·&nbsp; <button onclick="openHelp()" style="background:none;border:none;color:#60a5fa;cursor:pointer;font-size:12px;text-decoration:underline">❓ Manuale & Changelog</button></p>
     <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
       <label class="upload-btn">📂 Carica Export.xlsx<input type="file" accept=".xlsx,.xls" id="fileInput" style="display:none"></label>
       <button class="upload-btn" style="background:#0891b2;box-shadow:0 4px 12px rgba(8,145,178,.35)" onclick="showDiffUploadScreen()">🔀 Confronta due file</button>
@@ -393,27 +362,6 @@ tr:hover .row-del-btn{opacity:1}
   </div>
 </div>
 
-<!-- ADD ROW MODAL -->
-<div class="addrow-overlay" id="addRowOverlay" onclick="if(event.target===this)closeAddRow()">
-  <div class="addrow-modal">
-    <div class="addrow-header">
-      <h3>➕ Aggiungi voce</h3>
-      <button class="addrow-close" onclick="closeAddRow()">✕</button>
-    </div>
-    <div class="addrow-body">
-      <div><label>Valore (numerico o testo)</label><input id="arVal" type="text" placeholder="es. 10"></div>
-      <div><label>Testo IT</label><input id="arIT" type="text" placeholder="Testo in italiano"></div>
-      <div><label>Testo EN</label><input id="arEN" type="text" placeholder="English text"></div>
-      <div><label>Testo GB</label><input id="arGB" type="text" placeholder="British English"></div>
-      <div><label>Testo DE</label><input id="arDE" type="text" placeholder="Deutscher Text"></div>
-    </div>
-    <div class="addrow-footer">
-      <button class="btn btn-load" onclick="closeAddRow()">Annulla</button>
-      <button class="btn btn-export" onclick="confirmAddRow()">➕ Aggiungi</button>
-    </div>
-  </div>
-</div>
-
 <!-- HELP MODAL -->
 <div class="help-overlay" id="helpOverlay" onclick="if(event.target===this)closeHelp()">
   <div class="help-modal">
@@ -465,155 +413,44 @@ function setVersion(v){
   ['versionDisplay','versionDisplayC','versionDisplayD'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=d;});
 }
 
-/* ========== CELL HELPERS ========== */
-function renderCellContent(div, text){
-  div.innerHTML='';
-  if(!text){div.classList.add('empty'); div.textContent='—'; return;}
-  div.classList.remove('empty');
-  // split on \n and show ↵ symbol between lines
-  const parts=text.split('\n');
-  parts.forEach((part,i)=>{
-    if(part) div.appendChild(document.createTextNode(part));
-    if(i<parts.length-1){
-      const sym=document.createElement('span');
-      sym.className='nl'; sym.textContent='↵';
-      div.appendChild(sym);
-    }
-  });
-}
-
-function makeCellTextarea(currentVal, borderColor, onDone){
-  const ta=document.createElement('textarea');
-  ta.className='cell-input';
-  ta.style.border='2px solid '+borderColor;
-  ta.value=currentVal;
-  // auto-resize height up to max-height
-  const resize=()=>{ta.style.height='28px'; ta.style.height=Math.min(ta.scrollHeight,90)+'px';};
-  ta.addEventListener('input',resize);
-  setTimeout(resize,0);
-  ta.onkeydown=ev=>{
-    if(ev.key==='Enter'&&!ev.shiftKey){ev.preventDefault(); onDone(ta.value);}
-    if(ev.key==='Escape'){onDone(null);}
-    // Shift+Enter = newline (default textarea behaviour, no override needed)
-  };
-  return ta;
-}
+/* ========== ORIGINAL TEXTS (for modified highlight) ========== */
 // Two separate caches: one for editor, one for diff
 const _origEditor={};
 const _origDiff={};
-// Explicit set of keys modified by user in diff (includes copies)
-const _diffModified=new Set();
-
 function origKey(entry,lang){return entry.parent+'§'+entry.value+'§'+lang;}
-
 function recordOrig(entry,lang,ctx){
   const cache=ctx==='diff'?_origDiff:_origEditor;
   const k=origKey(entry,lang);
-  // If already explicitly marked as modified (e.g. by copyRow), don't overwrite the original
-  if(ctx==='diff'&&_diffModified.has(k)) return;
   if(!(k in cache)) cache[k]=entry.texts[lang]||'';
 }
-
 function isModified(entry,lang,ctx){
-  if(ctx==='diff'){
-    // A cell is modified if it's in the explicit set OR if its value differs from original
-    const k=origKey(entry,lang);
-    if(_diffModified.has(k)) return true;
-    return (k in _origDiff)&&_origDiff[k]!==(entry.texts[lang]||'');
-  }
-  const cache=_origEditor;
+  const cache=ctx==='diff'?_origDiff:_origEditor;
   const k=origKey(entry,lang);
   return (k in cache)&&cache[k]!==(entry.texts[lang]||'');
 }
-
-function markDiffModified(entry,lang){
-  _diffModified.add(origKey(entry,lang));
-}
-
 function clearOrigCache(ctx){
-  if(ctx==='diff'){
-    for(const k in _origDiff) delete _origDiff[k];
-    _diffModified.clear();
-  } else {
-    for(const k in _origEditor) delete _origEditor[k];
-  }
+  if(ctx==='diff'){for(const k in _origDiff) delete _origDiff[k];}
+  else{for(const k in _origEditor) delete _origEditor[k];}
 }
 
-/* ========== MULTI-CELL SELECTION (Excel style) ========== */
-const selMap=new Map();  // key -> {entry,lang,el,context,rowIdx,colIdx}
+/* ========== MULTI-CELL SELECTION ========== */
+// sel = Map<key, {entry,lang,el}>
+const selMap=new Map();
 let _clipboard='';
-let _clipboardCellCount=0;
-// Structured grid: array of rows, each row is array of {value, rowIdx, colIdx}
-// Used for internal paste — preserves \n inside cell values exactly
-let _clipboardGrid=null; // null = no internal copy available
-let _lastSelKey=null; // key of anchor cell for Shift+click range
-let _cellRegistry=[];  // [{key,entry,lang,el,rowIdx,colIdx,context,isEmpty}]
 
-function selKey(entry,lang,slot){
-  if(!entry) return null;
-  const base=entry.parent+'|'+entry.value+'|'+lang;
-  return slot?base+'|'+slot:base;
-}
-function selKeyPos(rowIdx,colIdx,ctx){return '__pos__'+ctx+'_'+rowIdx+'_'+colIdx;}
+function selKey(entry,lang){return entry.parent+'|'+entry.value+'|'+lang;}
 
-function registerCell(entry,lang,el,rowIdx,colIdx,context,precomputedKey){
-  const k=precomputedKey||(entry&&lang?selKey(entry,lang):selKeyPos(rowIdx,colIdx,context||''));
-  // Remove any stale entry with the same key (handles re-renders after edit)
-  const existing=_cellRegistry.findIndex(c=>c.key===k);
-  if(existing>=0) _cellRegistry.splice(existing,1);
-  _cellRegistry.push({key:k,entry,lang,el,rowIdx,colIdx,context:context||'editor',isEmpty:!entry});
-  if(k&&selMap.has(k)) el.classList.add('sel');
-}
-function clearCellRegistry(){_cellRegistry=[];}
-
-function _selectRange(fromKey,toKey){
-  const fromIdx=_cellRegistry.findIndex(c=>c.key===fromKey);
-  const toIdx=_cellRegistry.findIndex(c=>c.key===toKey);
-  if(fromIdx<0||toIdx<0) return;
-  const from=Math.min(fromIdx,toIdx), to=Math.max(fromIdx,toIdx);
-  const anchor=_cellRegistry[fromIdx];
-  const anchorCtx=anchor?.context||'editor';
-  // Extract lang from key (index 2 after split on |) — always reliable
-  // Key formats: "parent|value|lang" (editor) or "parent|value|lang|slot" (diff)
-  const keyParts=fromKey.split('|');
-  const anchorLang=keyParts[2]||anchor?.lang||null;
-  for(let i=from;i<=to;i++){
-    const c=_cellRegistry[i];
-    if(!c||c.isEmpty) continue;
-    // Always filter by same language — applies to both editor and diff
-    if(!anchorLang||c.lang!==anchorLang) continue;
-    // In diff mode: also filter by same slot (A or B)
-    if((anchorCtx==='diffA'||anchorCtx==='diffB')&&c.context!==anchorCtx) continue;
-    if(!selMap.has(c.key)){
-      selMap.set(c.key,{...c});
-      c.el.classList.add('sel');
-    }
-  }
-}
-
-function addSel(key,el,entry,lang,context,ev,cellIdx){
-  if(ev&&ev.shiftKey&&_lastSelKey){
-    _selectRange(_lastSelKey,key);
-    _lastSelKey=key;
-    _updateSelToolbar();
-    return;
-  }
-  // Ctrl+click (no shift) or Ctrl+Shift with no existing anchor: toggle cell
-  if(selMap.has(key)){
-    selMap.delete(key); el.classList.remove('sel');
-    _lastSelKey=null;
-  } else {
-    selMap.set(key,{key,entry,lang,el,context:context||'editor'});
-    el.classList.add('sel');
-    _lastSelKey=key;  // this cell becomes the anchor for future Shift+click
-  }
+function addSel(entry,lang,el,context){
+  const k=selKey(entry,lang);
+  if(selMap.has(k)){selMap.delete(k);el.classList.remove('sel');}
+  else{selMap.set(k,{entry,lang,el,context:context||'editor'});}
+  el.classList.toggle('sel',selMap.has(k));
   _updateSelToolbar();
 }
 
 function clearSel(){
-  selMap.forEach(c=>{if(c.el) c.el.classList.remove('sel');});
+  selMap.forEach(c=>c.el.classList.remove('sel'));
   selMap.clear();
-  _lastSelKey=null;
   _updateSelToolbar();
 }
 
@@ -631,187 +468,43 @@ function _updateSelToolbar(){
 
 function selCopy(){
   if(!selMap.size) return;
-  const cells=[...selMap.values()].filter(c=>c.entry);
-  if(!cells.length) return;
-  const withPos=cells.map(c=>{
-    const reg=_cellRegistry.find(r=>r.key===c.key);
-    return {...c, rowIdx:reg?.rowIdx??0, colIdx:reg?.colIdx??0};
-  });
-  withPos.sort((a,b)=>a.rowIdx!==b.rowIdx?a.rowIdx-b.rowIdx:a.colIdx-b.colIdx);
-  // Build structured grid (preserves \n inside values)
-  const rowMap=new Map();
-  withPos.forEach(c=>{
-    if(!rowMap.has(c.rowIdx)) rowMap.set(c.rowIdx,[]);
-    rowMap.get(c.rowIdx).push({value:c.entry.texts[c.lang]||'', rowIdx:c.rowIdx, colIdx:c.colIdx});
-  });
-  const sortedRows=[...rowMap.entries()].sort((a,b)=>a[0]-b[0]).map(([,cols])=>{
-    cols.sort((a,b)=>a.colIdx-b.colIdx); return cols;
-  });
-  _clipboardGrid=sortedRows;
-  _clipboardCellCount=cells.length;
-  // For system clipboard: use \t between cols, \n between rows, quote cells with \n inside
-  const sysText=sortedRows.map(row=>row.map(c=>{
-    // If value contains \t or \n, wrap in quotes (Excel convention)
-    const v=c.value;
-    return (v.includes('\t')||v.includes('\n'))?'"'+v.replace(/"/g,'""')+'"':v;
-  }).join('\t')).join('\n');
-  _clipboard=sysText;
-  navigator.clipboard.writeText(sysText).catch(()=>{});
-  showToast('📋 '+cells.length+' celle copiate ('+sortedRows.length+' righe)');
+  const vals=[...selMap.values()].map(c=>c.entry.texts[c.lang]||'');
+  _clipboard=vals.length===1?vals[0]:vals.join('\t');
+  navigator.clipboard.writeText(_clipboard).catch(()=>{});
+  showToast('📋 '+(vals.length===1?'"'+_clipboard.substring(0,40)+'"':vals.length+' celle copiate'));
 }
 
 function selPaste(){
   if(!selMap.size) return;
-  // Always use internal grid if available — it preserves \n inside cells perfectly
-  if(_clipboardGrid){
-    _applyPasteGrid(_clipboardGrid);
-  } else if(_clipboard!==''){
-    _applyPasteText(_clipboard);
-  }
+  navigator.clipboard.readText().then(t=>_applyPaste(t)).catch(()=>_applyPaste(_clipboard));
 }
-
-function _applyPaste(text, fromInternal){
-  // Entry point from browser paste event
-  if(!selMap.size) return;
-  if(fromInternal&&_clipboardGrid){
-    _applyPasteGrid(_clipboardGrid);
-  } else {
-    _applyPasteText(text);
-  }
-}
-
-function _applyPasteGrid(grid){
-  // grid = [[{value, rowIdx, colIdx}, ...], ...]
-  const cells=[...selMap.values()].filter(c=>c.entry);
-  if(!cells.length) return;
-  const isDiff=cells.some(c=>c.context==='diff'||c.context==='diffA'||c.context==='diffB');
+function _applyPaste(text){
+  const cells=[...selMap.values()];
+  const isDiff=cells.some(c=>c.context==='diff');
   const snap=cells.map(c=>({entry:c.entry,lang:c.lang,oldVal:c.entry.texts[c.lang]||''}));
   pushUndo({type:'multi',targets:snap,context:isDiff?'diff':'editor'});
-
-  const applyVal=(c,v)=>{
-    const isDiffCtx=c.context==='diff'||c.context==='diffA'||c.context==='diffB';
-    if(isDiffCtx){ markDiffModified(c.entry,c.lang); }
-    else { const k=c.entry.parent+'§'+c.entry.value+'§'+c.lang; if(!(k in _origEditor)) _origEditor[k]=c.entry.texts[c.lang]||''; }
-    c.entry.texts[c.lang]=v;
-    renderCellContent(c.el,v);
-    if(isDiffCtx){ c.el.classList.add('modified'); }
-    else { c.el.classList.toggle('modified',isModified(c.entry,c.lang,c.context)); }
-  };
-
-  const isSingle=(_clipboardCellCount===1);
-  if(isSingle){
-    // Single cell: paste same value to all selected
-    const v=grid[0]?.[0]?.value??'';
-    cells.forEach(c=>applyVal(c,v));
-  } else {
-    // Multi-cell grid: map by relative row/col position
-    const withPos=cells.map(c=>{
-      const reg=_cellRegistry.find(r=>r.key===c.key);
-      return {...c, rowIdx:reg?.rowIdx??0, colIdx:reg?.colIdx??0};
-    });
-    withPos.sort((a,b)=>a.rowIdx!==b.rowIdx?a.rowIdx-b.rowIdx:a.colIdx-b.colIdx);
-    const minRow=Math.min(...withPos.map(c=>c.rowIdx));
-    const minCol=Math.min(...withPos.map(c=>c.colIdx));
-    const selGrid=new Map();
-    withPos.forEach(c=>selGrid.set((c.rowIdx-minRow)+','+(c.colIdx-minCol),c));
-    grid.forEach((row,ri)=>{
-      row.forEach((src,ci)=>{
-        const target=selGrid.get(ri+','+ci);
-        if(target) applyVal(target,src.value);
-      });
-    });
-  }
+  cells.forEach(c=>{
+    c.entry.texts[c.lang]=text;
+    c.el.textContent=text||'—';
+    c.el.classList.toggle('empty',!text);
+    c.el.classList.toggle('modified',isModified(c.entry,c.lang,c.context));
+  });
   if(isDiff){diffChangeCount+=cells.length;updateDiffChangesBadge();}
   else{changeCount+=cells.length;updateChangesBadge();}
   showToast('📥 Incollato in '+cells.length+' celle');
-}
-
-function _applyPasteText(text){
-  // Fallback: paste from external clipboard (e.g. from Excel)
-  if(!text) return;
-  const cells=[...selMap.values()].filter(c=>c.entry);
-  if(!cells.length) return;
-  const isDiff=cells.some(c=>c.context==='diff'||c.context==='diffA'||c.context==='diffB');
-  const snap=cells.map(c=>({entry:c.entry,lang:c.lang,oldVal:c.entry.texts[c.lang]||''}));
-  pushUndo({type:'multi',targets:snap,context:isDiff?'diff':'editor'});
-
-  const applyVal=(c,v)=>{
-    const isDiffCtx=c.context==='diff'||c.context==='diffA'||c.context==='diffB';
-    if(isDiffCtx){ markDiffModified(c.entry,c.lang); }
-    else { const k=c.entry.parent+'§'+c.entry.value+'§'+c.lang; if(!(k in _origEditor)) _origEditor[k]=c.entry.texts[c.lang]||''; }
-    c.entry.texts[c.lang]=v;
-    renderCellContent(c.el,v);
-    if(isDiffCtx){ c.el.classList.add('modified'); }
-    else { c.el.classList.toggle('modified',isModified(c.entry,c.lang,c.context)); }
-  };
-
-  // Parse Excel-style: no \t = single value (even if has \n)
-  if(!text.includes('\t')){
-    cells.forEach(c=>applyVal(c,text));
-  } else {
-    // Parse tab/newline grid, handling quoted cells (RFC 4180)
-    const srcRows=_parseExcelText(text);
-    const withPos=cells.map(c=>{
-      const reg=_cellRegistry.find(r=>r.key===c.key);
-      return {...c, rowIdx:reg?.rowIdx??0, colIdx:reg?.colIdx??0};
-    });
-    withPos.sort((a,b)=>a.rowIdx!==b.rowIdx?a.rowIdx-b.rowIdx:a.colIdx-b.colIdx);
-    if(srcRows.length===1&&srcRows[0].length===1){
-      withPos.forEach(c=>applyVal(c,srcRows[0][0]));
-    } else {
-      const minRow=Math.min(...withPos.map(c=>c.rowIdx));
-      const minCol=Math.min(...withPos.map(c=>c.colIdx));
-      const selGrid=new Map();
-      withPos.forEach(c=>selGrid.set((c.rowIdx-minRow)+','+(c.colIdx-minCol),c));
-      srcRows.forEach((row,ri)=>row.forEach((v,ci)=>{
-        const target=selGrid.get(ri+','+ci);
-        if(target) applyVal(target,v);
-      }));
-    }
-  }
-  if(isDiff){diffChangeCount+=cells.length;updateDiffChangesBadge();}
-  else{changeCount+=cells.length;updateChangesBadge();}
-  showToast('📥 Incollato in '+cells.length+' celle');
-}
-
-function _parseExcelText(text){
-  // Parse Excel tab-separated text with optional quoted cells (RFC 4180)
-  // Quoted cells can contain \n and \t
-  const rows=[];
-  let row=[], cell='', inQuote=false;
-  const s=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
-  for(let i=0;i<s.length;i++){
-    const ch=s[i];
-    if(inQuote){
-      if(ch==='"'&&s[i+1]==='"'){cell+='"';i++;}  // escaped quote
-      else if(ch==='"'){inQuote=false;}
-      else{cell+=ch;}
-    } else {
-      if(ch==='"'&&cell===''){inQuote=true;}
-      else if(ch==='\t'){row.push(cell);cell='';}
-      else if(ch==='\n'){row.push(cell);rows.push(row);row=[];cell='';}
-      else{cell+=ch;}
-    }
-  }
-  row.push(cell); if(row.some(c=>c!=='')||rows.length===0) rows.push(row);
-  return rows;
 }
 
 function selDelete(){
   if(!selMap.size) return;
-  const cells=[...selMap.values()].filter(c=>c.entry);
-  if(!cells.length) return;
-  const isDiff=cells.some(c=>c.context==='diff'||c.context==='diffA'||c.context==='diffB');
+  const cells=[...selMap.values()];
+  const isDiff=cells.some(c=>c.context==='diff');
   const snap=cells.map(c=>({entry:c.entry,lang:c.lang,oldVal:c.entry.texts[c.lang]||''}));
   pushUndo({type:'multi',targets:snap,context:isDiff?'diff':'editor'});
   cells.forEach(c=>{
-    const isDiffCtx=c.context==='diff'||c.context==='diffA'||c.context==='diffB';
-    if(isDiffCtx){markDiffModified(c.entry,c.lang);}
-    else{const k=c.entry.parent+'§'+c.entry.value+'§'+c.lang;if(!(k in _origEditor))_origEditor[k]=c.entry.texts[c.lang]||'';}
     c.entry.texts[c.lang]='';
-    renderCellContent(c.el,'');
-    if(isDiffCtx){c.el.classList.add('modified');}
-    else{c.el.classList.toggle('modified',isModified(c.entry,c.lang,c.context));}
+    c.el.textContent='—';
+    c.el.classList.add('empty');
+    c.el.classList.toggle('modified',isModified(c.entry,c.lang,c.context));
   });
   if(isDiff){diffChangeCount+=cells.length;updateDiffChangesBadge();}
   else{changeCount+=cells.length;updateChangesBadge();}
@@ -850,29 +543,6 @@ function doUndo(){
     action.targets.forEach(t=>{t.entry.texts[t.lang]=t.oldVal;});
     if(action.context==='diff'){diffChangeCount=Math.max(0,diffChangeCount-action.targets.length);updateDiffChangesBadge();}
     else{changeCount=Math.max(0,changeCount-action.targets.length);updateChangesBadge();}
-  } else if(action.type==='addRow'){
-    action.entries.forEach(e=>{const i=action.entsArr.indexOf(e);if(i>=0)action.entsArr.splice(i,1);});
-    if(action.context==='editor'){changeCount=Math.max(0,changeCount-1);updateChangesBadge();applySelectedScope();}
-    else{diffChangeCount=Math.max(0,diffChangeCount-1);updateDiffChangesBadge();}
-  } else if(action.type==='addRowMulti'){
-    action.added.forEach(({entries,entsArr})=>{
-      entries.forEach(e=>{const i=entsArr.indexOf(e);if(i>=0)entsArr.splice(i,1);});
-    });
-    diffChangeCount=Math.max(0,diffChangeCount-1);updateDiffChangesBadge();
-  } else if(action.type==='deleteRow'){
-    action.entries.forEach(e=>action.entsArr.push(e));
-    if(action.context==='editor'){changeCount=Math.max(0,changeCount-1);updateChangesBadge();applySelectedScope();}
-    else{diffChangeCount=Math.max(0,diffChangeCount-1);updateDiffChangesBadge();}
-  } else if(action.type==='deleteRowBoth'){
-    action.removedA.forEach(e=>diffDataA.entries.push(e));
-    action.removedB.forEach(e=>diffDataB.entries.push(e));
-    diffChangeCount=Math.max(0,diffChangeCount-1);updateDiffChangesBadge();
-  } else if(action.type==='deleteDiffSection'){
-    action.removedTlA.forEach(t=>diffDataA.textLists.push(t));
-    action.removedTlB.forEach(t=>diffDataB.textLists.push(t));
-    const allNames=new Set([...diffDataA.textLists.map(t=>t.name),...diffDataB.textLists.map(t=>t.name)]);
-    diffGroups=buildGroups([...allNames]);
-    diffChangeCount=Math.max(0,diffChangeCount-1);updateDiffChangesBadge();
   }
   const es=document.getElementById('editorScreen'),ds=document.getElementById('diffScreen'),cs=document.getElementById('compareScreen');
   if(es.style.display==='flex'&&selectedGroup) renderGroup(selectedGroup);
@@ -1090,54 +760,55 @@ function refreshTdDiffColor(tdEl,eA,eB,lang){
   }
 }
 
-function makeDiffCell(entry,lang,slot,tdEl,peerEntry,rowIdx,colIdx){
+function makeDiffCell(entry,lang,slot,tdEl,peerEntry){
+  // peerEntry = the entry from the other side (A→pass B, B→pass A), used to refresh td color after edit
   if(!entry){
     const div=document.createElement('div');
-    div.className='cell empty'; div.textContent='—';
-    registerCell(null,null,div,rowIdx??0,colIdx??0,'diff'+slot);
+    div.className='cell empty';
+    div.textContent='—';
     return div;
   }
-  if(tdEl) tdEl.dataset.slot=slot;
+  if(tdEl) tdEl.dataset.slot=slot; // mark td so refreshTdDiffColor knows which side
   recordOrig(entry,lang,'diff');
   const val=entry.texts[lang]||'';
   const mod=isModified(entry,lang,'diff');
-  const k=selKey(entry,lang,slot);  // include slot so A and B have distinct keys
-  const isSel=selMap.has(k);
+  const isSel=selMap.has(selKey(entry,lang));
   const div=document.createElement('div');
-  div.className='cell'+(mod?' modified':'')+(isSel?' sel':'');
-  renderCellContent(div,val);
-  div.title=(mod?'✏️ Modificata  ':'')+'Clic=seleziona  DblClic=modifica  Ctrl+Shift+Clic=range ('+slot+')';
-  const ri=rowIdx??0, ci=colIdx??0;
-  registerCell(entry,lang,div,ri,ci,'diff'+slot,k);
+  div.className='cell'+(val?'':' empty')+(mod?' modified':'')+(isSel?' sel':'');
+  div.textContent=val||'—';
+  div.title=(mod?'✏️ Modificata  ':'')+'Clic=modifica  Ctrl+Clic=seleziona ('+slot+')';
   div.onclick=ev=>{
-    if(ev.ctrlKey||ev.metaKey){ev.preventDefault();addSel(k,div,entry,lang,'diff'+slot,ev);return;}
-    if(selMap.size>0){clearSel();return;}
-  };
-  div.ondblclick=ev=>{
-    ev.preventDefault(); clearSel();
-    const refreshColors=()=>{
-      const eA=slot==='A'?entry:peerEntry, eB=slot==='B'?entry:peerEntry;
+    if(ev.ctrlKey||ev.metaKey){ev.preventDefault();addSel(entry,lang,div,'diff');return;}
+    if(selMap.size>0) clearSel();
+    const inp=document.createElement('input');
+    inp.className='cell-input';
+    inp.style.border='2px solid '+(slot==='A'?'#0891b2':'#059669');
+    inp.value=entry.texts[lang]||'';
+    div.replaceWith(inp); inp.focus(); inp.select();
+    const done=()=>{
+      const nv=inp.value;
+      if(nv!==(entry.texts[lang]||'')){
+        pushUndo({type:'cell',entry,lang,oldVal:entry.texts[lang]||'',newVal:nv,context:'diff'});
+        entry.texts[lang]=nv;
+        diffChangeCount++; updateDiffChangesBadge();
+      }
+      const newDiv=makeDiffCell(entry,lang,slot,tdEl,peerEntry);
+      inp.replaceWith(newDiv);
+      // refresh color on THIS td
+      const eA=slot==='A'?entry:peerEntry;
+      const eB=slot==='B'?entry:peerEntry;
       refreshTdDiffColor(tdEl,eA,eB,lang);
+      // also refresh the peer td (sibling)
       if(tdEl){
         const allTds=[...tdEl.parentElement.children];
         const myIdx=allTds.indexOf(tdEl);
+        // peer td is next or previous depending on slot
         const peerTd=slot==='A'?allTds[myIdx+1]:allTds[myIdx-1];
         if(peerTd) refreshTdDiffColor(peerTd,eA,eB,lang);
       }
     };
-    const commit=nv=>{
-      if(nv===null){ta.replaceWith(makeDiffCell(entry,lang,slot,tdEl,peerEntry,ri,ci));refreshColors();return;}
-      if(nv!==(entry.texts[lang]||'')){
-        pushUndo({type:'cell',entry,lang,oldVal:entry.texts[lang]||'',newVal:nv,context:'diff'});
-        entry.texts[lang]=nv; diffChangeCount++; updateDiffChangesBadge();
-        markDiffModified(entry,lang);
-      }
-      ta.replaceWith(makeDiffCell(entry,lang,slot,tdEl,peerEntry,ri,ci));
-      refreshColors();
-    };
-    const ta=makeCellTextarea(entry.texts[lang]||'',slot==='A'?'#0891b2':'#059669',commit);
-    ta.onblur=()=>commit(ta.value);
-    div.replaceWith(ta); ta.focus(); ta.select();
+    inp.onblur=done;
+    inp.onkeydown=ev2=>{if(ev2.key==='Enter'){ev2.preventDefault();done();}if(ev2.key==='Escape'){inp.value=entry.texts[lang]||'';done();}};
   };
   return div;
 }
@@ -1152,6 +823,13 @@ function copyRow(mapA,mapB,val,listName,fromSlot){
   let eDst=eDstMap[val];
   const oldTexts=eDst?{...eDst.texts}:null;
   if(!eDst){
+    // Register originals as empty BEFORE creating the new entry
+    LANGS.forEach(l=>{
+      const k=eDst?origKey({parent:listName,value:val},l):null;
+      // pre-register the destination as empty so after copy it shows as modified
+      const key=listName+'§'+val+'§'+l;
+      if(!(_origDiff[key]!=null)) _origDiff[key]='';
+    });
     eDst={name:eSrc.name,parent:listName,defaultEntry:eSrc.defaultEntry,value:val,texts:{...eSrc.texts},fieldInfos:eSrc.fieldInfos};
     dstData.entries.push(eDst);
     if(!dstData.textLists.find(t=>t.name===listName)){
@@ -1160,10 +838,13 @@ function copyRow(mapA,mapB,val,listName,fromSlot){
     }
     eDstMap[val]=eDst;
   } else {
+    // Register originals BEFORE overwriting, so the new value shows as modified
+    LANGS.forEach(l=>{
+      const key=listName+'§'+val+'§'+l;
+      if(!(_origDiff[key]!=null)) _origDiff[key]=eDst.texts[l]||'';
+    });
     LANGS.forEach(l=>{eDst.texts[l]=eSrc.texts[l]||'';});
   }
-  // Mark all langs of destination as explicitly modified by user
-  LANGS.forEach(l=>markDiffModified(eDst,l));
   const targets=LANGS.map(l=>({entry:eDst,lang:l,oldVal:oldTexts?oldTexts[l]||'':''}));
   pushUndo({type:'copy',targets,context:'diff'});
   diffChangeCount++;
@@ -1175,8 +856,6 @@ function copyRow(mapA,mapB,val,listName,fromSlot){
 function renderDiffTable(gk){
   const names=diffGroups[gk];
   const wrap=document.getElementById('diffTableWrap'); wrap.innerHTML='';
-  clearCellRegistry();
-  clearSel();
   const inA=new Set(diffDataA.textLists.map(t=>t.name));
   const inB=new Set(diffDataB.textLists.map(t=>t.name));
 
@@ -1194,17 +873,7 @@ function renderDiffTable(gk){
     const sA=inA.has(listName)?'<span style="background:#dbeafe;color:#2563eb;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">A</span>':'<span style="background:#f1f5f9;color:#94a3b8;padding:1px 6px;border-radius:4px;font-size:10px">–</span>';
     const sB=inB.has(listName)?'<span style="background:#dcfce7;color:#059669;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">B</span>':'<span style="background:#f1f5f9;color:#94a3b8;padding:1px 6px;border-radius:4px;font-size:10px">–</span>';
     const diffInfo=diffs>0?'<span style="color:#dc2626;font-weight:600">'+diffs+' diff</span>':'<span style="color:#16a34a">✓ identico</span>';
-    const totalEntries=getDiffForList(listName).allVals.length;
     sec.innerHTML='<span style="font-size:13px">'+listName.replace('Z2000_','')+'</span>'+sA+sB+'<span style="font-weight:400;color:#64748b;font-size:11px;margin-left:4px">'+diffInfo+' · '+vals.length+' voci</span>';
-    // Add delete-section button when the section has 0 entries total
-    if(totalEntries===0){
-      const delSec=document.createElement('button');
-      delSec.title='Elimina questa sezione vuota';
-      delSec.style.cssText='margin-left:auto;border:none;background:#fee2e2;color:#dc2626;border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;cursor:pointer';
-      delSec.textContent='🗑 Elimina sezione';
-      delSec.onclick=()=>deleteDiffSection(listName);
-      sec.appendChild(delSec);
-    }
     wrap.appendChild(sec);
 
     if(vals.length===0){
@@ -1239,14 +908,14 @@ function renderDiffTable(gk){
     thead.appendChild(tr1); table.appendChild(thead);
 
     const tbody=document.createElement('tbody');
-    vals.forEach((val,rowIdx)=>{
+    vals.forEach(val=>{
       const eA=mapA[val],eB=mapB[val];
       const tr=document.createElement('tr');
       if(eA&&!eB) tr.classList.add('tr-only-a');
       if(!eA&&eB) tr.classList.add('tr-only-b');
 
-      // copy buttons per riga: →B e ←A + 🗑A 🗑B
-      const tdCopy=document.createElement('td'); tdCopy.style.cssText='text-align:center;width:90px;white-space:nowrap';
+      // copy buttons per riga: →B e ←A
+      const tdCopy=document.createElement('td'); tdCopy.style.cssText='text-align:center;width:64px;white-space:nowrap';
       if(eA){
         const btnAB=document.createElement('button');
         btnAB.title='Copia da A a B';
@@ -1258,17 +927,10 @@ function renderDiffTable(gk){
       if(eB){
         const btnBA=document.createElement('button');
         btnBA.title='Copia da B a A';
-        btnBA.style.cssText='border:none;background:#dcfce7;color:#166534;border-radius:4px;padding:1px 4px;cursor:pointer;font-size:9px;font-weight:700;margin-right:2px';
+        btnBA.style.cssText='border:none;background:#dcfce7;color:#166534;border-radius:4px;padding:1px 4px;cursor:pointer;font-size:9px;font-weight:700';
         btnBA.textContent='←A';
         btnBA.onclick=()=>copyRow(mapA,mapB,val,listName,'B');
         tdCopy.appendChild(btnBA);
-      }
-      if(eA||eB){
-        const btnD=document.createElement('button');
-        btnD.title='Elimina da A e B'; btnD.className='row-del-btn';
-        btnD.textContent='🗑';
-        btnD.onclick=e=>{e.stopPropagation();deleteRowBoth(val,listName);};
-        tdCopy.appendChild(btnD);
       }
       tr.appendChild(tdCopy);
 
@@ -1284,19 +946,14 @@ function renderDiffTable(gk){
         else if(eA&&!eB){tdA.classList.add('cell-only-a');tdB.classList.add('cell-only-b');}
         else if(isDiff){tdA.classList.add('cell-diff-a');tdB.classList.add('cell-diff-b');}
 
-        const dA=makeDiffCell(eA,lang,'A',tdA,eB,rowIdx,i*2);
-        const dB=makeDiffCell(eB,lang,'B',tdB,eA,rowIdx,i*2+1);
+        const dA=makeDiffCell(eA,lang,'A',tdA,eB);
+        const dB=makeDiffCell(eB,lang,'B',tdB,eA);
         tdA.appendChild(dA); tdB.appendChild(dB);
         tr.appendChild(tdA); tr.appendChild(tdB);
       });
       tbody.appendChild(tr);
     });
     table.appendChild(tbody); wrap.appendChild(table);
-    // Single add button — adds to both A and B
-    const addBtn=document.createElement('button'); addBtn.className='add-row-btn';
-    addBtn.textContent='➕ Aggiungi voce (in A e B)';
-    addBtn.onclick=()=>openAddRow([listName],'diffAB');
-    wrap.appendChild(addBtn);
   });
 }
 
@@ -1409,11 +1066,10 @@ function renderCompareTable(){
   names.forEach((n,li)=>activeLangs.forEach((lang,idx)=>{const th=document.createElement('th'); if(idx===0&&li>0) th.className='sep'; th.style.color=LANG_COLORS[lang]; th.textContent=LANG_LABELS[lang]; tr2.appendChild(th);}));
   thead.appendChild(tr2); table.appendChild(thead);
   const tbody=document.createElement('tbody');
-  vals.forEach((val,rowIdx)=>{
+  vals.forEach(val=>{
     const tr=document.createElement('tr');
     const tdVal=document.createElement('td'); tdVal.className='val-col'; tdVal.textContent=val; tr.appendChild(tdVal);
-    let colIdx=0;
-    names.forEach((n,li)=>activeLangs.forEach((lang,idx)=>{const td=document.createElement('td'); if(idx===0&&li>0) td.className='sep'; const e=eMap[n+'|'+val]; if(e) td.appendChild(mkCell(e,lang,rowIdx,colIdx++)); else{td.innerHTML='<span style="color:#e2e8f0;font-size:11px">—</span>';colIdx++;} tr.appendChild(td);}));
+    names.forEach((n,li)=>activeLangs.forEach((lang,idx)=>{const td=document.createElement('td'); if(idx===0&&li>0) td.className='sep'; const e=eMap[n+'|'+val]; if(e) td.appendChild(mkCell(e,lang)); else td.innerHTML='<span style="color:#e2e8f0;font-size:11px">—</span>'; tr.appendChild(td);}));
     tbody.appendChild(tr);
   });
   table.appendChild(tbody); wrap.innerHTML=''; wrap.appendChild(table);
@@ -1478,8 +1134,6 @@ function filterGroups(){
 
 function renderGroup(gk){
   const names=groups[gk]; if(!names) return;
-  clearCellRegistry();
-  clearSel();
   document.getElementById('emptyState').style.display='none';
   const old=document.getElementById('groupView'); if(old) old.remove();
   const content=document.getElementById('content');
@@ -1494,319 +1148,67 @@ function renderGroup(gk){
   const tableWrap=document.createElement('div'); tableWrap.className='content-table-wrap';
   function buildTable(vals){
     const table=document.createElement('table'); const thead=document.createElement('thead');
-    const tr1=document.createElement('tr');
-    // delete column header
-    const thDel=document.createElement('th'); thDel.style.cssText='width:24px;padding:4px 2px'; tr1.appendChild(thDel);
-    const thVal=document.createElement('th'); thVal.className='val-col'; thVal.textContent='Valore'; tr1.appendChild(thVal);
+    const tr1=document.createElement('tr'); const thVal=document.createElement('th'); thVal.className='val-col'; thVal.textContent='Valore'; tr1.appendChild(thVal);
     if(isMulti){
       const shortNames=names.map(n=>{const m=n.match(/_(\d+)$/);return m?('#'+m[1]):n.replace('Z2000_','');});
       names.forEach((n,i)=>{const th=document.createElement('th'); th.colSpan=activeLangs.length; if(i>0) th.className='sep'; th.innerHTML='<div style="font-size:12px;font-weight:700;color:#334155">'+shortNames[i]+'</div>'; tr1.appendChild(th);});
       thead.appendChild(tr1);
-      const tr2=document.createElement('tr'); tr2.className='sub';
-      const thE=document.createElement('th'); tr2.appendChild(thE);
-      const thE2=document.createElement('th'); thE2.className='val-col'; tr2.appendChild(thE2);
+      const tr2=document.createElement('tr'); tr2.className='sub'; const thE=document.createElement('th'); thE.className='val-col'; tr2.appendChild(thE);
       names.forEach((n,li)=>activeLangs.forEach((lang,idx)=>{const th=document.createElement('th'); if(idx===0&&li>0) th.className='sep'; th.style.color=LANG_COLORS[lang]; th.textContent=LANG_LABELS[lang]; tr2.appendChild(th);}));
       thead.appendChild(tr2);
     }else{activeLangs.forEach(lang=>{const th=document.createElement('th'); th.style.color=LANG_COLORS[lang]; th.textContent=LANG_LABELS[lang]; tr1.appendChild(th);}); thead.appendChild(tr1);}
     table.appendChild(thead);
     const tbody=document.createElement('tbody');
-    vals.forEach((val,rowIdx)=>{
-      const tr=document.createElement('tr');
-      // delete button cell
-      const tdDel=document.createElement('td'); tdDel.style.cssText='padding:0 2px;text-align:center';
-      const delBtn=document.createElement('button'); delBtn.className='row-del-btn'; delBtn.textContent='🗑'; delBtn.title='Elimina voce "'+val+'"';
-      delBtn.onclick=e=>{e.stopPropagation();deleteRow(val,names,'editor');};
-      tdDel.appendChild(delBtn); tr.appendChild(tdDel);
-      const tdVal=document.createElement('td'); tdVal.className='val-col'; tdVal.textContent=val; tr.appendChild(tdVal);
-      let colIdx=0;
-      (isMulti?names:[names[0]]).forEach((n,li)=>activeLangs.forEach((lang,idx)=>{const td=document.createElement('td'); if(isMulti&&idx===0&&li>0) td.className='sep'; const e=eMap[n+'|'+val]; if(e) td.appendChild(mkCell(e,lang,rowIdx,colIdx++)); else td.innerHTML='<span style="color:#e2e8f0;font-size:11px">—</span>'; tr.appendChild(td);}));
+    vals.forEach(val=>{
+      const tr=document.createElement('tr'); const tdVal=document.createElement('td'); tdVal.className='val-col'; tdVal.textContent=val; tr.appendChild(tdVal);
+      (isMulti?names:[names[0]]).forEach((n,li)=>activeLangs.forEach((lang,idx)=>{const td=document.createElement('td'); if(isMulti&&idx===0&&li>0) td.className='sep'; const e=eMap[n+'|'+val]; if(e) td.appendChild(mkCell(e,lang)); else td.innerHTML='<span style="color:#e2e8f0;font-size:11px">—</span>'; tr.appendChild(td);}));
       tbody.appendChild(tr);
     });
     table.appendChild(tbody); return table;
   }
-  const addBtn=document.createElement('button'); addBtn.className='add-row-btn';
-  addBtn.textContent='➕ Aggiungi voce';
-  addBtn.onclick=()=>openAddRow(names,'editor');
-  tableWrap.appendChild(buildTable(allVals));
-  tableWrap.appendChild(addBtn);
-  wrap.appendChild(tableWrap); content.appendChild(wrap);
-  document.getElementById('contentSearch').oninput=function(){const s=this.value.toLowerCase(); const filtered=!s?allVals:allVals.filter(v=>v.toLowerCase().includes(s)||names.some(n=>{const e=eMap[n+'|'+v];return e&&activeLangs.some(l=>(e.texts[l]||'').toLowerCase().includes(s));})); clearCellRegistry(); clearSel(); tableWrap.innerHTML=''; tableWrap.appendChild(buildTable(filtered)); tableWrap.appendChild(addBtn);};
+  tableWrap.appendChild(buildTable(allVals)); wrap.appendChild(tableWrap); content.appendChild(wrap);
+  document.getElementById('contentSearch').oninput=function(){const s=this.value.toLowerCase(); const filtered=!s?allVals:allVals.filter(v=>v.toLowerCase().includes(s)||names.some(n=>{const e=eMap[n+'|'+v];return e&&activeLangs.some(l=>(e.texts[l]||'').toLowerCase().includes(s));})); tableWrap.innerHTML=''; tableWrap.appendChild(buildTable(filtered));};
 }
 
-function mkCell(entry,lang,rowIdx,colIdx){
+function mkCell(entry,lang){
   recordOrig(entry,lang,'editor');
   const val=entry.texts[lang]||'';
   const mod=isModified(entry,lang,'editor');
-  const k=selKey(entry,lang);
-  const isSel=selMap.has(k);
+  const isSel=selMap.has(selKey(entry,lang));
   const div=document.createElement('div');
-  div.className='cell'+(mod?' modified':'')+(isSel?' sel':'');
-  renderCellContent(div,val);
-  div.title=(mod?'✏️ Modificata  ':'')+'Clic=seleziona  DblClic=modifica  Ctrl+Shift+Clic=range';
-  const ri=rowIdx??0, ci=colIdx??0;
-  registerCell(entry,lang,div,ri,ci,'editor');
-  const cellIdx=_cellRegistry.length-1;
+  div.className='cell'+(val?'':' empty')+(mod?' modified':'')+(isSel?' sel':'');
+  div.textContent=val||'—';
+  div.title=(mod?'✏️ Modificata  ':'')+'Clic=modifica  Ctrl+Clic=seleziona';
   div.onclick=ev=>{
-    if(ev.ctrlKey||ev.metaKey){ev.preventDefault();addSel(k,div,entry,lang,'editor',ev);return;}
-    if(selMap.size>0){clearSel();return;}
-  };
-  div.ondblclick=ev=>{
-    ev.preventDefault();
-    clearSel();
-    const commit=nv=>{
-      if(nv===null){ta.replaceWith(mkCell(entry,lang,ri,ci));return;}
+    if(ev.ctrlKey||ev.metaKey){ev.preventDefault();addSel(entry,lang,div);return;}
+    if(selMap.size>0){clearSel();}
+    // enter edit mode
+    const inp=document.createElement('input');
+    inp.className='cell-input';
+    inp.style.border='2px solid '+(LANG_COLORS[lang]||'#3b82f6');
+    inp.value=entry.texts[lang]||'';
+    div.replaceWith(inp); inp.focus(); inp.select();
+    const done=()=>{
+      const nv=inp.value;
       if(nv!==(entry.texts[lang]||'')){
         pushUndo({type:'cell',entry,lang,oldVal:entry.texts[lang]||'',newVal:nv,context:'editor'});
         entry.texts[lang]=nv; changeCount++; updateChangesBadge();
       }
-      ta.replaceWith(mkCell(entry,lang,ri,ci));
+      inp.replaceWith(mkCell(entry,lang));
     };
-    const ta=makeCellTextarea(entry.texts[lang]||'',LANG_COLORS[lang]||'#3b82f6',commit);
-    ta.onblur=()=>commit(ta.value);
-    div.replaceWith(ta); ta.focus(); ta.select();
+    inp.onblur=done;
+    inp.onkeydown=ev2=>{
+      if(ev2.key==='Enter'){ev2.preventDefault();done();}
+      if(ev2.key==='Escape'){inp.value=entry.texts[lang]||'';done();}
+    };
   };
   return div;
 }
 
-/* ========== ROW ADD / DELETE ========== */
-let _addRowTarget=null; // {parentNames:[], context:'editor'|'diffA'|'diffB'}
-
-function openAddRow(parentNames, context){
-  _addRowTarget={parentNames, context};
-  ['arVal','arIT','arEN','arGB','arDE'].forEach(id=>{document.getElementById(id).value='';});
-  document.getElementById('addRowOverlay').classList.add('open');
-  setTimeout(()=>document.getElementById('arVal').focus(),60);
-}
-function closeAddRow(){
-  document.getElementById('addRowOverlay').classList.remove('open');
-  _addRowTarget=null;
-}
-function confirmAddRow(){
-  if(!_addRowTarget) return;
-  const val=document.getElementById('arVal').value.trim();
-  if(!val){showToast('Inserisci un valore');return;}
-  const texts={'it-IT':document.getElementById('arIT').value,
-               'en-US':document.getElementById('arEN').value,
-               'en-GB':document.getElementById('arGB').value,
-               'de-DE':document.getElementById('arDE').value};
-  const {parentNames, context}=_addRowTarget;
-  const isEditor=(context==='editor');
-  const isDiffAB=(context==='diffAB');
-
-  if(isEditor){
-    const entsArr=allEntries;
-    if(entsArr.some(e=>e.parent===parentNames[0]&&e.value===val)){
-      showToast('Valore "'+val+'" già presente'); return;
-    }
-    const newEntries=parentNames.map(pn=>({
-      name:pn+'_'+val,parent:pn,defaultEntry:'False',value:val,texts:{...texts},fieldInfos:''
-    }));
-    newEntries.forEach(ne=>entsArr.push(ne));
-    pushUndo({type:'addRow',entries:newEntries,entsArr,context:'editor'});
-    applySelectedScope(); changeCount++; updateChangesBadge();
-    closeAddRow();
-    if(selectedGroup) renderGroup(selectedGroup);
-    showToast('✅ Voce "'+val+'" aggiunta');
-  } else if(isDiffAB){
-    // Add to both A and B
-    const allAdded=[];
-    [diffDataA.entries, diffDataB.entries].forEach((entsArr,i)=>{
-      if(entsArr.some(e=>e.parent===parentNames[0]&&e.value===val)) return;
-      const newEntries=parentNames.map(pn=>({
-        name:pn+'_'+val,parent:pn,defaultEntry:'False',value:val,texts:{...texts},fieldInfos:''
-      }));
-      newEntries.forEach(ne=>entsArr.push(ne));
-      allAdded.push({entries:newEntries,entsArr});
-    });
-    if(!allAdded.length){showToast('Valore "'+val+'" già presente in entrambi i file');return;}
-    pushUndo({type:'addRowMulti',added:allAdded,context:'diff'});
-    diffChangeCount++; updateDiffChangesBadge();
-    closeAddRow();
-    if(selectedDiffList) renderDiffTable(selectedDiffList);
-    showToast('✅ Voce "'+val+'" aggiunta in A e B');
-  } else {
-    // single diff slot (diffA or diffB)
-    const entsArr=context==='diffA'?diffDataA.entries:diffDataB.entries;
-    if(entsArr.some(e=>e.parent===parentNames[0]&&e.value===val)){
-      showToast('Valore "'+val+'" già presente'); return;
-    }
-    const newEntries=parentNames.map(pn=>({
-      name:pn+'_'+val,parent:pn,defaultEntry:'False',value:val,texts:{...texts},fieldInfos:''
-    }));
-    newEntries.forEach(ne=>entsArr.push(ne));
-    pushUndo({type:'addRow',entries:newEntries,entsArr,context:'diff'});
-    diffChangeCount++; updateDiffChangesBadge();
-    closeAddRow();
-    if(selectedDiffList) renderDiffTable(selectedDiffList);
-    showToast('✅ Voce "'+val+'" aggiunta');
-  }
-}
-
-function deleteRow(val, parentNames, context){
-  const isEditor=(context==='editor');
-  const entsArr=isEditor?allEntries:(context==='diffA'?diffDataA.entries:diffDataB.entries);
-  const removed=[];
-  parentNames.forEach(pn=>{
-    const idx=entsArr.findIndex(e=>e.parent===pn&&e.value===val);
-    if(idx>=0) removed.push(...entsArr.splice(idx,1));
-  });
-  if(!removed.length) return;
-  pushUndo({type:'deleteRow', entries:removed, entsArr, context:isEditor?'editor':'diff'});
-  if(isEditor){applySelectedScope(); changeCount++; updateChangesBadge();}
-  else{diffChangeCount++; updateDiffChangesBadge();}
-  if(isEditor&&selectedGroup) renderGroup(selectedGroup);
-  else if(!isEditor&&selectedDiffList) renderDiffTable(selectedDiffList);
-  showToast('🗑 Voce "'+val+'" eliminata');
-}
-
-function deleteRowBoth(val, listName){
-  // Delete from both A and B simultaneously
-  const removedA=[],removedB=[];
-  const idxA=diffDataA.entries.findIndex(e=>e.parent===listName&&e.value===val);
-  if(idxA>=0) removedA.push(...diffDataA.entries.splice(idxA,1));
-  const idxB=diffDataB.entries.findIndex(e=>e.parent===listName&&e.value===val);
-  if(idxB>=0) removedB.push(...diffDataB.entries.splice(idxB,1));
-  if(!removedA.length&&!removedB.length) return;
-  pushUndo({type:'deleteRowBoth',removedA,removedB,listName,context:'diff'});
-  diffChangeCount++; updateDiffChangesBadge();
-  if(selectedDiffList) renderDiffTable(selectedDiffList);
-  filterDiffSidebar();
-  showToast('🗑 Voce "'+val+'" eliminata da A e B');
-}
-
-function deleteDiffSection(listName){
-  // Remove the textList entry from both A and B (entries already 0)
-  const removedTlA=[], removedTlB=[];
-  const iA=diffDataA.textLists.findIndex(t=>t.name===listName);
-  if(iA>=0) removedTlA.push(...diffDataA.textLists.splice(iA,1));
-  const iB=diffDataB.textLists.findIndex(t=>t.name===listName);
-  if(iB>=0) removedTlB.push(...diffDataB.textLists.splice(iB,1));
-  pushUndo({type:'deleteDiffSection',removedTlA,removedTlB,listName,context:'diff'});
-  // Rebuild diff groups
-  const allNames=new Set([...diffDataA.textLists.map(t=>t.name),...diffDataB.textLists.map(t=>t.name)]);
-  diffGroups=buildGroups([...allNames]);
-  if(selectedDiffList===listName||(diffGroups[selectedDiffList]===undefined)) selectedDiffList=null;
-  diffChangeCount++; updateDiffChangesBadge();
-  filterDiffSidebar();
-  if(selectedDiffList) renderDiffTable(selectedDiffList);
-  else document.getElementById('diffTableWrap').innerHTML='<div class="empty-state"><div class="icon">🔍</div><div style="font-size:15px;font-weight:500">Seleziona un elenco dalla barra laterale</div></div>';
-  showToast('🗑 Sezione "'+listName.replace('Z2000_','')+'" eliminata');
-}
-
 /* ========== HELP MODAL ========== */
-const APP_VERSION='3.2';
+const APP_VERSION='1.1';
 const CHANGELOG=[
-  {ver:'3.2',date:'2026-04-14',cur:true,items:[
-    'Fix: Ctrl+Shift nel confronto seleziona solo la stessa lingua dello stesso slot',
-    'Filtro lingua ora applicato sempre — editor e confronto',
-  ]},
-  {ver:'3.1',date:'2026-04-14',cur:false,items:[
-    'Fix: Ctrl+Shift seleziona solo la stessa lingua — anchorLang estratto dalla chiave (sempre affidabile)',
-    'Fix: filtro lingua in _selectRange ora usa c.lang!==anchorLang senza condizioni extra',
-  ]},
-  {ver:'3.0',date:'2026-04-14',cur:false,items:[
-    'Fix: _selectRange ora filtra SEMPRE per lingua in editor — anchorLang non può essere nullo',
-    'Fix: ricerca nel gruppo ora pulisce il registry prima di ricostruire la tabella',
-    'Fix: selezione Ctrl+clic su una cella non trascina mai celle di altre lingue',
-  ]},
-  {ver:'2.9',date:'2026-04-14',cur:false,items:[
-    'Fix: SyntaxError isDiff dichiarato due volte in _applyPasteGrid',
-  ]},
-  {ver:'2.8',date:'2026-04-14',cur:false,items:[
-    'Fix definitivo range paste con testo a capo: clipboard interna usa struttura 2D, non stringa piatta',
-    'I \\n dentro le celle non vengono mai confusi con separatori di riga',
-    'Aggiunto parser RFC 4180 per celle quotate incollate da Excel esterno',
-  ]},
-  {ver:'2.7',date:'2026-04-14',cur:false,items:[
-    'Fix: ReferenceError cellIdx is not defined — rimosso parametro residuo dalle chiamate addSel',
-  ]},
-  {ver:'2.6',date:'2026-04-14',cur:false,items:[
-    'Fix definitivo Ctrl+Shift tabella A e B: le celle A e B ora hanno chiavi distinte nel registry',
-    'Le celle A e B dello stesso valore non si sovrascrivono più — entrambe selezionabili indipendentemente',
-  ]},
-  {ver:'2.5',date:'2026-04-14',cur:false,items:[
-    'Riscrittura completa del sistema di selezione — risolve tutti i bug accumulati',
-    'Fix: registerCell rimuove le voci stantie — Ctrl+Shift funziona anche su celle modificate',
-    'Fix: _selectRange usa chiavi stringa stabili invece di indici numerici fragili',
-    'Fix: Ctrl+Shift su tabella B seleziona solo celle di B',
-    'Fix: Ctrl+Shift in editor seleziona solo la stessa lingua dell\'ancora',
-    'Fix: incolla testo con a capo — la cella non si spezza mai (logica no-tab = cella singola)',
-    'Fix: doppio firing Ctrl+V eliminato — un solo percorso di paste garantito',
-  ]},
-  {ver:'2.4',date:'2026-04-14',cur:false,items:[
-    'Fix definitivo incolla: rimosso conflitto tra evento keydown Ctrl+V e evento paste del browser',
-    'Fix: testo con a capo incollato da clipboard interna non viene più spezzato su più celle',
-    'Fix: Ctrl+Shift su tabella B ora funziona correttamente',
-    'Fix: Ctrl+Shift in editor seleziona solo la stessa lingua dell\'ancora',
-  ]},
-  {ver:'2.3',date:'2026-04-13',cur:false,items:[
-    'Fix: Ctrl+Shift ora seleziona anche la tabella B nel confronto (rimosso filtro troppo restrittivo)',
-    'Fix: Ctrl+Shift in editor seleziona solo la stessa lingua dell\'ancora — non tutte le lingue',
-    'Fix: incolla con testo a capo non spezza più su 2 celle — intercettato evento copy/paste del browser',
-    'Fix: Ctrl+C del browser con celle selezionate aggiorna correttamente il contatore celle copiate',
-  ]},
-  {ver:'2.2',date:'2026-04-13',cur:false,items:[
-    'Fix: incolla su più celle ora distribuisce correttamente i valori — non tutto nella prima cella',
-    'Fix: mancavano rowIdx/colIdx nelle celle della Vista insieme — ora il grid paste funziona anche lì',
-    'Fix: Ctrl+Shift su celle modificate non va più fuori range — l\'ancora viene risolta freschi dal registry',
-    'Fix: dopo una modifica il registro non si "rompe" — la selezione range rimane stabile',
-  ]},
-  {ver:'2.1',date:'2026-04-13',cur:false,items:[
-    'Fix definitivo testo con a capo: qualsiasi testo senza tab (\\t) viene trattato come valore singolo',
-    'Regola corretta: Excel usa SEMPRE il tab per separare colonne — testo con solo \\n = cella singola multi-riga',
-    'Ora funziona anche copiando con Ctrl+C da dentro la textarea di modifica',
-  ]},
-  {ver:'2.0',date:'2026-04-13',cur:false,items:[
-    'Fix definitivo: testo con a capo copiato da una cella viene incollato intero su tutte le celle selezionate',
-    'Fix: il paste usa la clipboard interna quando disponibile — non risente del parsing del browser',
-    'Fix: la cella modificata con incolla o svuota diventa sempre gialla (evidenziazione garantita)',
-    'Fix: l\'originale viene registrato al momento dell\'incolla anche se la cella non era mai stata aperta',
-  ]},
-  {ver:'1.9',date:'2026-04-08',cur:false,items:[
-    'Fix: testo con a capo (↵) copiato da una cella viene incollato intero in tutte le celle selezionate',
-    'Fix: il testo con \\n non viene più spezzato in più celle al momento dell\'incolla',
-  ]},
-  {ver:'1.8',date:'2026-04-08',cur:false,items:[
-    'Fix: Ctrl+Shift+Clic seleziona solo le celle della stessa colonna (A oppure B) nel confronto',
-    'Fix: la selezione può essere fatta indipendentemente su colonna A, colonna B, o entrambe (con Ctrl+Clic)',
-    'Il range rispetta il contesto della cella di partenza — non mischia A e B involontariamente',
-  ]},
-  {ver:'1.7',date:'2026-04-08',cur:false,items:[
-    'Fix: clic singolo = seleziona cella (blu), doppio clic = modifica cella',
-    'Fix: Ctrl+Shift+Clic seleziona intervallo anche su celle vuote (—)',
-    'Fix: copia/incolla rispetta la struttura righe×colonne esatta come Excel',
-    'Fix: incolla da Excel su selezione → i valori vanno nelle celle corrispondenti, non tutti nella prima',
-    'Fix: selezione funziona in modo indipendente su tabella A, tabella B, o entrambe',
-  ]},
-  {ver:'1.6',date:'2026-04-08',cur:false,items:[
-    'Nuovo: pulsante 🗑 Elimina sezione appare automaticamente quando una sezione del confronto è vuota (0 voci)',
-    'Fix: pulsante elimina riga nel confronto ora è uno solo (🗑) che elimina da A e B simultaneamente',
-    'Nuovo: selezione celle stile Excel con Ctrl+Shift+Clic per selezionare un intervallo di celle',
-    'Nuovo: Ctrl+C copia le celle selezionate in formato tabulare (tab tra colonne, newline tra righe)',
-    'Nuovo: Ctrl+V incolla un blocco copiato da Excel rispettando la struttura righe/colonne',
-    'Fix: il numero di versione app viene incrementato anche per i bugfix (a partire da questa versione)',
-    'Manuale aggiornato: gestione sezioni vuote, selezione range, copia/incolla stile Excel',
-  ]},
-  {ver:'1.5',date:'2026-04-02',cur:false,items:[
-    'Nuovo: eliminare singole voci — pulsante 🗑 al passaggio del mouse sulla riga',
-    'Nuovo: aggiungere voci con modale — pulsante ➕ in fondo alla tabella',
-    'Nuovo: nel confronto 🗑A elimina da A, 🗑B elimina da B',
-    'Nuovo: ➕ Aggiungi voce nel confronto aggiunge in entrambi i file',
-    'Fix: pulsanti 🗑 visibili correttamente al passaggio del mouse',
-    'Aggiunta/eliminazione voci annullabile con Ctrl+Z',
-  ]},
-  {ver:'1.4',date:'2026-03-31',cur:false,items:[
-    'Fix definitivo: celle copiate con →B / ←A / A→B / B→A ora diventano sempre gialle',
-    'Nuovo sistema di tracciamento modifiche diff con Set esplicito — indipendente dalla cache originali',
-    'Fix: il giallo persiste anche dopo undo parziale e ri-apertura dell\'elenco',
-  ]},
-  {ver:'1.3',date:'2026-03-31',cur:false,items:[
-    'Supporto a capo nelle celle: Shift+Invio inserisce a capo, Invio conferma (come Excel)',
-    'Le celle mostrano il simbolo ↵ dove è presente un a capo',
-    'La textarea si espande automaticamente fino a 3 righe durante la modifica',
-    'Fix: a capo funziona sia nell\'editor che nel confronto file',
-  ]},
-  {ver:'1.1',date:'2026-03-30',cur:false,items:[
+  {ver:'1.1',date:'2026-03-30',cur:true,items:[
     'Manuale operatore ampliato: guida completa a tutte le funzioni con istruzioni passo-passo',
     'Descrizione dettagliata di ogni pulsante, colore e azione disponibile',
   ]},
@@ -1898,12 +1300,6 @@ const MANUAL_HTML=`
 
 <p style="margin-top:8px"><strong>📂 Carica altro</strong> — sostituisce il file corrente con uno nuovo, azzerando tutte le modifiche non salvate.</p>
 
-<p style="margin-top:8px"><strong>➕ Aggiungere una voce</strong> — in fondo ad ogni tabella c'è il pulsante <em>➕ Aggiungi voce</em>. Cliccalo per aprire una finestra dove inserire il valore (numerico o testo) e i testi per tutte le lingue. La nuova voce viene aggiunta all'elenco e la modifica è annullabile con Ctrl+Z.</p>
-
-<p style="margin-top:8px"><strong>🗑 Eliminare una voce</strong> — passa il mouse su una riga della tabella: appare il pulsante <strong>🗑</strong> a sinistra del valore. Cliccalo per eliminare quella voce. L'eliminazione è annullabile con Ctrl+Z.</p>
-
-<div class="warn">L'eliminazione di una voce rimuove anche tutti i suoi testi in tutte le lingue. Usa Ctrl+Z subito dopo per annullare.</div>
-
 <div class="tip">Il badge arancione in topbar (es. <em>3 modifiche</em>) conta le celle che hai modificato nella sessione corrente. Si azzera solo con Ripristina tutto o ricaricando il file.</div>
 
 <hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0">
@@ -1949,31 +1345,24 @@ const MANUAL_HTML=`
 <div class="tip">Usa il filtro <em>Solo differenze</em> prima di cliccare A→B o B→A per copiare solo le voci che differiscono, senza sovrascrivere quelle già uguali.</div>
 <div class="warn">Le copie di riga sono annullabili con Ctrl+Z o il pulsante ↩ Annulla. Tuttavia Ripristina tutto azzera entrambi i file.</div>
 
-<p style="margin-top:8px"><strong>➕ Aggiungere una voce</strong> — in fondo ad ogni sezione c'è il pulsante <em>➕ Aggiungi voce (in A e B)</em>. La voce viene aggiunta contemporaneamente in entrambi i file con lo stesso valore e testi. Annullabile con Ctrl+Z.</p>
-
-<p style="margin-top:8px"><strong>🗑 Eliminare una voce</strong> — passa il mouse su una riga: appare il pulsante <strong>🗑</strong> che elimina la voce da entrambi i file A e B simultaneamente. Annullabile con Ctrl+Z.</p>
-
-<p style="margin-top:8px"><strong>🗑 Eliminare una sezione vuota</strong> — quando una sezione non ha più voci (0 voci), nell'intestazione compare automaticamente il pulsante <strong>🗑 Elimina sezione</strong> che rimuove l'elenco da entrambi i file. Annullabile con Ctrl+Z.</p>
-
 <hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0">
 
 <h3 id="s4">🖱 4 — Selezione multi-cella stile Excel</h3>
 <p>Funziona sia nell'editor che nel confronto file.</p>
 <ul>
-  <li><strong>Ctrl+clic</strong> su una cella — aggiunge la cella alla selezione (diventa blu). Ctrl+clic di nuovo la deseleziona.</li>
-  <li><strong>Ctrl+Shift+clic</strong> su una cella — seleziona tutte le celle dall'ultima selezionata fino a quella cliccata (intervallo, come Excel).</li>
-  <li>Puoi selezionare celle da righe e colonne diverse.</li>
+  <li><strong>Ctrl+clic</strong> su una cella — la aggiunge alla selezione (diventa blu). Ctrl+clic di nuovo sulla stessa cella la deseleziona.</li>
+  <li>Puoi selezionare celle da righe e colonne diverse, anche di lingue diverse.</li>
   <li>Non appena ci sono celle selezionate appare la <strong>toolbar in basso</strong> con le azioni disponibili.</li>
 </ul>
 <p style="margin-top:8px"><strong>Azioni dalla toolbar (e tasti rapidi equivalenti):</strong></p>
 <ul>
-  <li><strong>📋 Copia</strong> (<span class="kbd">Ctrl+C</span>) — copia le celle selezionate in formato tabulare (tab tra colonne, a capo tra righe), compatibile con Excel. Se è selezionata una sola cella copia solo quel testo.</li>
-  <li><strong>📥 Incolla</strong> (<span class="kbd">Ctrl+V</span>) — incolla un blocco copiato da Excel rispettando la struttura righe/colonne. Se il testo incollato è una singola cella, lo stesso valore viene incollato in tutte le celle selezionate.</li>
+  <li><strong>📋 Copia</strong> (<span class="kbd">Ctrl+C</span>) — copia il testo della/e celle selezionate negli appunti. Se è selezionata una sola cella copia quel testo. Se sono più celle le unisce con un tab.</li>
+  <li><strong>📥 Incolla</strong> (<span class="kbd">Ctrl+V</span>) — incolla lo stesso testo in tutte le celle selezionate simultaneamente. Il testo incollato sovrascrive il contenuto attuale di ciascuna cella.</li>
   <li><strong>🗑 Svuota</strong> (<span class="kbd">Canc</span>) — cancella il contenuto di tutte le celle selezionate.</li>
   <li><strong>↩ Annulla</strong> (<span class="kbd">Ctrl+Z</span>) — annulla l'ultima operazione multi-cella.</li>
   <li><strong>✕ Esc</strong> (<span class="kbd">Esc</span>) — deseleziona tutte le celle e chiude la toolbar.</li>
 </ul>
-<div class="tip">Flusso tipico: seleziona un blocco di celle con Ctrl+Shift+clic → copia con Ctrl+C → seleziona la destinazione → incolla con Ctrl+V. Funziona anche copiando da Excel e incollando qui, e viceversa.</div>
+<div class="tip">Per incollare lo stesso testo su più celle: seleziona prima tutte le celle target con Ctrl+clic, poi premi Ctrl+V. Il testo già copiato negli appunti (anche da Excel) verrà incollato in tutte le celle selezionate.</div>
 
 <hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0">
 
@@ -2049,24 +1438,6 @@ function switchHelpTab(tab,btn){
   else body.innerHTML=buildChangelogHTML();
 }
 document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&document.getElementById('helpOverlay').classList.contains('open')){closeHelp();}});
-// Intercept browser copy/paste events when cells are selected
-document.addEventListener('copy',ev=>{
-  if(selMap.size>0&&!(document.activeElement&&(document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='TEXTAREA'))){
-    ev.preventDefault();
-    selCopy();
-  }
-});
-document.addEventListener('paste',ev=>{
-  if(selMap.size>0&&!(document.activeElement&&(document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='TEXTAREA'))){
-    ev.preventDefault();
-    if(_clipboardGrid){
-      _applyPasteGrid(_clipboardGrid);
-    } else {
-      const txt=ev.clipboardData?.getData('text')||'';
-      _applyPasteText(txt);
-    }
-  }
-});
 document.addEventListener('keydown',ev=>{
   const inInput=document.activeElement&&(document.activeElement.tagName==='INPUT'||document.activeElement.tagName==='TEXTAREA');
   if((ev.ctrlKey||ev.metaKey)&&ev.key==='z'&&!ev.shiftKey&&!inInput){ev.preventDefault();doUndo();return;}
@@ -2077,102 +1448,6 @@ document.addEventListener('keydown',ev=>{
     if(ev.key==='Escape'){clearSel();return;}
   }
 });
-
-/* ========== AUTO-UPDATE CHECK ========== */
-(function(){
-  const REPO_OWNER='lucacalcabrini';
-  const REPO_NAME='TiaTextEditor';
-  const VERSION_FILE='version.json';
-  const CURRENT_VERSION=APP_VERSION;
-  const TOKEN_KEY='tia_editor_gh_token';
-
-  // Create update banner
-  const banner=document.createElement('div');
-  banner.className='update-banner';
-  banner.id='updateBanner';
-  banner.innerHTML='<span id="updateMsg"></span><a id="updateDownload" href="#">⬇ Scarica aggiornamento</a><button class="update-close" onclick="document.getElementById(\'updateBanner\').style.display=\'none\'">&times;</button>';
-  document.body.appendChild(banner);
-
-  // Create token modal
-  const modal=document.createElement('div');
-  modal.className='gh-token-modal';
-  modal.id='ghTokenModal';
-  modal.innerHTML=`<div class="gh-token-box">
-    <h3>🔑 Token GitHub richiesto</h3>
-    <p>Per controllare gli aggiornamenti serve un Personal Access Token (read-only) per la repo privata.<br>
-    Vai su <b>GitHub → Settings → Developer settings → Fine-grained tokens</b> e crea un token con permesso <b>Contents: Read</b> per la repo <b>${REPO_NAME}</b>.</p>
-    <input type="password" id="ghTokenInput" placeholder="github_pat_...">
-    <div class="btn-row">
-      <button class="btn btn-load" onclick="document.getElementById('ghTokenModal').classList.remove('on')">Annulla</button>
-      <button class="btn btn-export" onclick="saveGhToken()">Salva e controlla</button>
-    </div>
-  </div>`;
-  document.body.appendChild(modal);
-
-  window.saveGhToken=function(){
-    const t=document.getElementById('ghTokenInput').value.trim();
-    if(!t){alert('Inserisci un token valido');return;}
-    localStorage.setItem(TOKEN_KEY,t);
-    document.getElementById('ghTokenModal').classList.remove('on');
-    checkForUpdate(t);
-  };
-
-  function compareVersions(a,b){
-    const pa=a.split('.').map(Number), pb=b.split('.').map(Number);
-    for(let i=0;i<Math.max(pa.length,pb.length);i++){
-      const na=pa[i]||0, nb=pb[i]||0;
-      if(na<nb) return -1;
-      if(na>nb) return 1;
-    }
-    return 0;
-  }
-
-  async function checkForUpdate(token){
-    try{
-      const resp=await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${VERSION_FILE}`,{
-        headers:{'Authorization':`Bearer ${token}`,'Accept':'application/vnd.github.v3.raw'}
-      });
-      if(resp.status===401||resp.status===403){
-        localStorage.removeItem(TOKEN_KEY);
-        console.warn('[AutoUpdate] Token non valido o scaduto');
-        return;
-      }
-      if(!resp.ok){console.warn('[AutoUpdate] Impossibile controllare:',resp.status);return;}
-      const data=JSON.parse(await resp.text());
-      if(data.version && compareVersions(CURRENT_VERSION,data.version)<0){
-        document.getElementById('updateMsg').textContent=`🚀 Nuova versione disponibile: v${data.version} (tu hai v${CURRENT_VERSION})`;
-        // Build download URL for the HTML file
-        const dlBtn=document.getElementById('updateDownload');
-        dlBtn.onclick=async function(e){
-          e.preventDefault();
-          try{
-            const fname=data.filename||'TIA_TextList_Editor_MULTI_v'+data.version+'.html';
-            const r=await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${fname}`,{
-              headers:{'Authorization':`Bearer ${token}`,'Accept':'application/vnd.github.v3.raw'}
-            });
-            if(!r.ok){alert('Errore nel download: '+r.status);return;}
-            const blob=await r.blob();
-            const url=URL.createObjectURL(blob);
-            const a=document.createElement('a');a.href=url;a.download=fname;a.click();
-            URL.revokeObjectURL(url);
-          }catch(err){alert('Errore: '+err.message);}
-        };
-        banner.style.display='block';
-      } else {
-        console.log('[AutoUpdate] Versione aggiornata (v'+CURRENT_VERSION+')');
-      }
-    }catch(err){console.warn('[AutoUpdate] Errore:',err);}
-  }
-
-  // Auto-check on load
-  const token=localStorage.getItem(TOKEN_KEY);
-  if(token){
-    checkForUpdate(token);
-  } else {
-    // Show token prompt after a short delay
-    setTimeout(()=>document.getElementById('ghTokenModal').classList.add('on'),1500);
-  }
-})();
 </script>
 </body>
 </html>
