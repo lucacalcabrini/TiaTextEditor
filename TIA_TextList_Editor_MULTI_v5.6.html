@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<title>TIA Portal Text List Editor v5.5</title>
+<title>TIA Portal Text List Editor v5.6</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -78,13 +78,6 @@ thead tr.sub th{background:#f1f5f9;font-size:10px}
 .update-banner a{color:#fde68a;text-decoration:underline;cursor:pointer;margin-left:8px}
 .update-banner .update-close{position:absolute;right:16px;top:50%;transform:translateY(-50%);background:none;border:none;color:#fff;font-size:18px;cursor:pointer;opacity:.7}
 .update-banner .update-close:hover{opacity:1}
-.gh-token-modal{display:none;position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.5);align-items:center;justify-content:center}
-.gh-token-modal.on{display:flex}
-.gh-token-box{background:#fff;border-radius:12px;padding:24px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-.gh-token-box h3{margin-bottom:8px;color:#0f172a}
-.gh-token-box p{font-size:12px;color:#64748b;margin-bottom:12px}
-.gh-token-box input{width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;font-family:'JetBrains Mono',monospace;margin-bottom:12px}
-.gh-token-box .btn-row{display:flex;gap:8px;justify-content:flex-end}
 .sel-toolbar{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;border-radius:10px;padding:8px 16px;gap:8px;align-items:center;box-shadow:0 8px 30px rgba(0,0,0,.5);z-index:9000;white-space:nowrap}
 .sel-toolbar.on{display:flex}
 .stb{padding:4px 12px;border-radius:6px;border:none;cursor:pointer;font-size:11px;font-weight:700}
@@ -229,7 +222,7 @@ tr:hover .row-del-btn{opacity:1}
     <div style="font-size:40px;margin-bottom:16px">⚙️</div>
     <h1>TIA Portal Text List Editor</h1>
     <p style="margin-bottom:6px">Carica il file Excel esportato dal TIA Portal.<br>Dopo il caricamento puoi scegliere quali elenchi aprire.</p>
-    <p style="font-size:12px;color:#64748b;margin-bottom:18px">versione app: <span style="font-family:'JetBrains Mono',monospace;color:#60a5fa">v5.5</span> &nbsp;·&nbsp; <button onclick="openHelp()" style="background:none;border:none;color:#60a5fa;cursor:pointer;font-size:12px;text-decoration:underline">❓ Manuale & Changelog</button></p>
+    <p style="font-size:12px;color:#64748b;margin-bottom:18px">versione app: <span style="font-family:'JetBrains Mono',monospace;color:#60a5fa">v5.6</span> &nbsp;·&nbsp; <button onclick="openHelp()" style="background:none;border:none;color:#60a5fa;cursor:pointer;font-size:12px;text-decoration:underline">❓ Manuale & Changelog</button></p>
     <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
       <label class="upload-btn">📂 Carica Export.xlsx<input type="file" accept=".xlsx,.xls" id="fileInput" style="display:none"></label>
       <button class="upload-btn" style="background:#0891b2;box-shadow:0 4px 12px rgba(8,145,178,.35)" onclick="showDiffUploadScreen()">🔀 Confronta due file</button>
@@ -2507,9 +2500,13 @@ function exportMergedFile(data){
 }
 
 /* ========== HELP MODAL ========== */
-const APP_VERSION='5.5';
+const APP_VERSION='5.6';
 const CHANGELOG=[
-  {ver:'5.5',date:'2026-05-19',cur:true,items:[
+  {ver:'5.6',date:'2026-05-19',cur:true,items:[
+    'Repo pubblica: auto-update senza token GitHub',
+    'Rimosso modal token — il check avviene automaticamente all\'apertura',
+  ]},
+  {ver:'5.5',date:'2026-05-19',cur:false,items:[
     'Aggiunto controllo automatico aggiornamenti dalla repo GitHub',
     'Download diretto nuova versione dal banner di update',
     'Aggiornamento repo con tutte le modifiche del collega (v3.7 → v5.5)',
@@ -2949,13 +2946,12 @@ document.addEventListener('keydown',ev=>{
   }
 });
 
-/* ========== AUTO-UPDATE CHECK ========== */
+/* ========== AUTO-UPDATE CHECK (public repo — no token needed) ========== */
 (function(){
   const REPO_OWNER='lucacalcabrini';
   const REPO_NAME='TiaTextEditor';
   const VERSION_FILE='version.json';
   const CURRENT_VERSION=APP_VERSION;
-  const TOKEN_KEY='tia_editor_gh_token';
 
   // Create update banner
   const banner=document.createElement('div');
@@ -2963,30 +2959,6 @@ document.addEventListener('keydown',ev=>{
   banner.id='updateBanner';
   banner.innerHTML='<span id="updateMsg"></span><a id="updateDownload" href="#">⬇ Scarica aggiornamento</a><button class="update-close" onclick="document.getElementById(\'updateBanner\').style.display=\'none\'">&times;</button>';
   document.body.appendChild(banner);
-
-  // Create token modal
-  const modal=document.createElement('div');
-  modal.className='gh-token-modal';
-  modal.id='ghTokenModal';
-  modal.innerHTML=`<div class="gh-token-box">
-    <h3>🔑 Token GitHub richiesto</h3>
-    <p>Per controllare gli aggiornamenti serve un Personal Access Token (read-only) per la repo privata.<br>
-    Vai su <b>GitHub → Settings → Developer settings → Fine-grained tokens</b> e crea un token con permesso <b>Contents: Read</b> per la repo <b>${REPO_NAME}</b>.</p>
-    <input type="password" id="ghTokenInput" placeholder="github_pat_...">
-    <div class="btn-row">
-      <button class="btn btn-load" onclick="document.getElementById('ghTokenModal').classList.remove('on')">Annulla</button>
-      <button class="btn btn-export" onclick="saveGhToken()">Salva e controlla</button>
-    </div>
-  </div>`;
-  document.body.appendChild(modal);
-
-  window.saveGhToken=function(){
-    const t=document.getElementById('ghTokenInput').value.trim();
-    if(!t){alert('Inserisci un token valido');return;}
-    localStorage.setItem(TOKEN_KEY,t);
-    document.getElementById('ghTokenModal').classList.remove('on');
-    checkForUpdate(t);
-  };
 
   function compareVersions(a,b){
     const pa=a.split('.').map(Number), pb=b.split('.').map(Number);
@@ -2998,16 +2970,11 @@ document.addEventListener('keydown',ev=>{
     return 0;
   }
 
-  async function checkForUpdate(token){
+  async function checkForUpdate(){
     try{
       const resp=await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${VERSION_FILE}`,{
-        headers:{'Authorization':`Bearer ${token}`,'Accept':'application/vnd.github.v3.raw'}
+        headers:{'Accept':'application/vnd.github.v3.raw'}
       });
-      if(resp.status===401||resp.status===403){
-        localStorage.removeItem(TOKEN_KEY);
-        console.warn('[AutoUpdate] Token non valido o scaduto');
-        return;
-      }
       if(!resp.ok){console.warn('[AutoUpdate] Impossibile controllare:',resp.status);return;}
       const data=JSON.parse(await resp.text());
       if(data.version && compareVersions(CURRENT_VERSION,data.version)<0){
@@ -3018,7 +2985,7 @@ document.addEventListener('keydown',ev=>{
           try{
             const fname=data.filename||'TIA_TextList_Editor_MULTI_v'+data.version+'.html';
             const r=await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${fname}`,{
-              headers:{'Authorization':`Bearer ${token}`,'Accept':'application/vnd.github.v3.raw'}
+              headers:{'Accept':'application/vnd.github.v3.raw'}
             });
             if(!r.ok){alert('Errore nel download: '+r.status);return;}
             const blob=await r.blob();
@@ -3034,13 +3001,8 @@ document.addEventListener('keydown',ev=>{
     }catch(err){console.warn('[AutoUpdate] Errore:',err);}
   }
 
-  // Auto-check on load
-  const token=localStorage.getItem(TOKEN_KEY);
-  if(token){
-    checkForUpdate(token);
-  } else {
-    setTimeout(()=>document.getElementById('ghTokenModal').classList.add('on'),1500);
-  }
+  // Auto-check on load (no token needed for public repo)
+  checkForUpdate();
 })();
 </script>
 </body>

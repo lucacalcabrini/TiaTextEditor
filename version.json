@@ -1,6 +1,6 @@
 {
-  "version": "5.5",
-  "filename": "TIA_TextList_Editor_MULTI_v5.5.html",
+  "version": "5.6",
+  "filename": "TIA_TextList_Editor_MULTI_v5.6.html",
   "date": "2026-05-19",
-  "notes": "Merge funzione unisci file, performance, fix vari, auto-update check"
+  "notes": "Repo pubblica, auto-update senza token"
 }
