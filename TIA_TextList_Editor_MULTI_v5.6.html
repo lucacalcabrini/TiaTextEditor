@@ -312,11 +312,12 @@ tr:hover .row-del-btn{opacity:1}
         <div style="font-size:16px;font-weight:700;color:#0f172a">⚠️ Risoluzione conflitti</div>
         <div style="font-size:12px;color:#64748b;margin-top:2px" id="conflictProgress"></div>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <button onclick="resolveAll('first')" style="padding:6px 12px;background:#2563eb;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer">Tieni tutti i primi</button>
         <button onclick="resolveAll('last')" style="padding:6px 12px;background:#16a34a;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer">Tieni tutti gli ultimi</button>
         <button onclick="collapseAllSections(true)" style="padding:6px 10px;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:7px;font-size:12px;cursor:pointer" title="Chiudi tutti i gruppi">▶ Chiudi tutti</button>
         <button onclick="collapseAllSections(false)" style="padding:6px 10px;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:7px;font-size:12px;cursor:pointer" title="Apri tutti i gruppi">▼ Apri tutti</button>
+        <button onclick="closeMergeConflictModal()" style="padding:6px 10px;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:7px;font-size:12px;cursor:pointer;margin-left:4px" title="Chiudi e torna indietro">✕ Chiudi</button>
       </div>
     </div>
     <!-- Filter bar -->
@@ -1927,6 +1928,11 @@ function _buildMergeAllEntries(){
     });
   });
   _mergeAllEntries=[...entryMap.values()];
+}
+
+function closeMergeConflictModal(){
+  document.getElementById('mergeConflictOverlay').style.display='none';
+  showMergeScreen();
 }
 
 function startMerge(){
