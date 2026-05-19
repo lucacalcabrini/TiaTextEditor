@@ -1,0 +1,9 @@
+# Test files
+*.xlsx
+*.xls
+*.docx
+*.pptx
+
+# Old versions (only latest version is tracked)
+TIA_TextList_Editor_MULTI_v1*.html
+TIA_TextList_Editor_MULTI_v2*.html
