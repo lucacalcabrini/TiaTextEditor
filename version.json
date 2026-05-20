@@ -1,6 +1,6 @@
 {
-  "version": "5.11",
-  "filename": "TIA_TextList_Editor_MULTI_v5.11.html",
-  "date": "2026-05-19",
-  "notes": "Allineamento nome file e versione interna"
+  "version": "5.12",
+  "filename": "TIA_TextList_Editor_MULTI_v5.12.html",
+  "date": "2026-05-20",
+  "notes": "Aggiunta icona SVG embedded nella tab del browser"
 }
